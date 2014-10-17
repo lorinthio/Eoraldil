@@ -1,3 +1,6 @@
+#Simply a placeholder until I work on this more
+
+
 class Monster:
 	
 	def __init__(self):
