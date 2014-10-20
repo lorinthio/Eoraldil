@@ -41,8 +41,12 @@ class Player:
 	def equipClass(self, className):
 		# Saves the characters current class in its storage then loads the 
 		#      desired class to curClass
-		self.classes[curClass.name] = curClass
-		curClass = self.classes[className]
+		try:
+			self.classes[self.curClass.name] = self.curClass
+			self.curClass = self.classes[className]
+		except AttributeError:
+			self.curClass = self.classes[className]
+		
 		
 	def equip(self, item):
 		slot = item.slot
@@ -53,7 +57,7 @@ class Player:
 		# Check if it is a weapon or armor, then check if the character class
 		#    can equip it (equippable = True)
 		if type(item) is Weapon:
-			if item.weaponType in curClass.weaponTypes:
+			if item.weaponType in Class.weaponTypes:
 				equippable = True
 			if not equippable:
 				return print("You cannot equip this type of weapon,", item.weaponType)
