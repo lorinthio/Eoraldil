@@ -7,15 +7,7 @@ def createItems():
 	IH = ItemHandler()
 
 	#Weapon
-	#USAGE :: Weapon(Name, DiceRolls, MaxNumber, DamageType, EquipSlot)
-	longsword = Weapon("Longsword", 1, 8, "Slash", "MainHand")
-	IH.newItem("Longsword", longsword)
-	morningstar = Weapon("Morningstar", 1, 8, "Blunt", "MainHand")
-	IH.newItem("Morningstar", morningstar)
-	rapier = Weapon("Rapier", 1, 6, "Pierce", "MainHand")
-	IH.newItem("Rapier", rapier)
-	battleaxe = Weapon("Battleaxe", 2, 6, "Slash", "2Hand", wType="Martial")
-	IH.newItem("Battleaxe", battleaxe)
+	makeWeapons(IH)
 	
 	
 	#Armor Creations
@@ -247,10 +239,23 @@ class Armor(Equipment):
 #         makeHempArmor()
 #         makeFurArmor() etc etc
 
+def makeWeapons(ItemHandler):
+	IH = ItemHandler
+	
+	#USAGE :: Weapon(Name, DiceRolls, MaxNumber, DamageType, EquipSlot)
+	longsword = Weapon("Longsword", 1, 8, "Slash", "MainHand")
+	IH.newItem("Longsword", longsword)
+	morningstar = Weapon("Morningstar", 1, 8, "Blunt", "MainHand")
+	IH.newItem("Morningstar", morningstar)
+	rapier = Weapon("Rapier", 1, 6, "Pierce", "MainHand")
+	IH.newItem("Rapier", rapier)
+	battleaxe = Weapon("Battleaxe", 2, 6, "Slash", "2Hand", wType="Martial")
+	IH.newItem("Battleaxe", battleaxe)	
 
 def makeClothArmor(ItemHandler):
 	IH = ItemHandler
 	
+	#USAGE :: Armor(Name, armor, type, slot)
 	cloth_helmet = Armor("Cloth Helmet", 1, "Cloth", "Helmet")
 	cloth_chest = Armor("Cloth Robes", 2, "Cloth", "Chest")
 	cloth_gloves = Armor("Cloth Gloves", 1, "Cloth", "Gloves")
@@ -265,6 +270,7 @@ def makeClothArmor(ItemHandler):
 def makeLeatherArmor(ItemHandler):
 	IH = ItemHandler
 	
+	#USAGE :: Armor(Name, armor, type, slot)
 	leather_helmet = Armor("Leather Helmet", 1, "Leather", "Helmet")
 	leather_chest = Armor("Leather Jerkin", 3, "Leather", "Chest")
 	leather_gloves = Armor("Leather Gloves", 1, "Leather", "Gloves")
@@ -279,6 +285,7 @@ def makeLeatherArmor(ItemHandler):
 def makeChainArmor(ItemHandler):
 	IH = ItemHandler
 	
+	#USAGE :: Armor(Name, armor, type, slot)
 	chain_helmet = Armor("Chainmail Helmet", 2, "Chain", "Helmet")
 	chain_chest = Armor("Chainmail Jerkin", 4, "Chain", "Chest")
 	chain_gloves = Armor("Chainmail Gloves", 2, "Chain", "Gloves")
@@ -294,6 +301,7 @@ def makeChainArmor(ItemHandler):
 def makePlateArmor(ItemHandler):
 	IH = ItemHandler
 	
+	#USAGE :: Armor(Name, armor, type, slot)
 	plate_helmet = Armor("Copper Plate Helmet", 3, "Plate", "Helmet")
 	plate_chest = Armor("Copper Chestplate", 5, "Plate", "Chest")
 	plate_gloves = Armor("Copper Plate Gloves", 3, "Plate", "Gloves")
