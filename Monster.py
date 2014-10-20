@@ -1,9 +1,23 @@
+from random import *
+
 #Simply a placeholder until I work on this more
 
-
-class Monster:
+def makeMonsters():
+	makeForestCreatures()
+	#makeAquaticCreatures()
 	
-	def __init__(self):
+def makeForestCreatures():
+	DireRabbit = Monster("Dire Rabbit")
+	DireRabbit.setStats(15, 12, 16, 16, 12, 12)
+	DireRabbit.setAttacks({"Bite": [1, 6], "Feral Bite": [3,4]})
+	
+class Creature:
+	def __init__(self, Name):
+		#Skill storage
+		self.name = Name
+		self.aggresive = False
+		self.attacks = {}
+		
 		# Equipment
 		self.mainHand = None
 		self.offHand = None
@@ -31,3 +45,33 @@ class Monster:
 		self.agility = 14
 		self.wisdom = 12
 		self.intelligence = 12
+		
+	def setAttacks(self, attacks):
+		self.attacks = attacks
+		
+	def setStats(self, STR, CON, DEX, AGI, WIS, INT):
+		self.strength = STR
+		self.constitution = CON
+		self.dexterity = DEX
+		self.agility = AGI
+		self.wisdom = WIS
+		self.intelligence = INT
+		
+	def attack(self, target):
+		attacks = self.attacks.keys()
+		NameAttack = choice(list(attacks))
+		
+		attack = self.attacks[NameAttack]
+		damage = 0
+		for i in range(attack[0]):
+			damage += randint(1, attack[1])
+		print(self.name + " has used " + NameAttack + " for " + str(damage) + " damage.")
+
+
+class Monster(Creature):
+	
+	def __init__(self, Name):
+		#Skill storage
+		self.aggresive = True
+		Creature.__init__(self, Name)
+		
