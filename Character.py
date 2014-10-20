@@ -3,7 +3,7 @@ from Item import *
 #When saving character data, this will need a mix of database and Pickle, so we
 #   can save/load objects directly. As the modified items will be hard to store
 #   otherwise... So pickle the inventories/Equipment per player, but store stats/talents in
-#   database is my idea
+#   database is my idea.
 
 
 # Generic player class, not implemented yet. Eventually will store connection data also for Multiplayer
