@@ -279,6 +279,20 @@ class Tile:
         if block_sight is None:
             self.block_sight = blocked
 
+class Chunk:
+
+    def __init__(self, map, posx, posy):
+        self.owner = map
+        self.tiles = empty_chunk()
+        self.posx = posx
+        self.posy = posy
+
+    def empty_chunk(self):
+        #fill map with "blocked" tiles first
+        mapped = [[Tile(False)
+            for y in range(32)]
+                for x in range(32)]
+        return mapped
 
 class RectRoom:
 
