@@ -1,15 +1,34 @@
 from random import *
+from copy import *
 
 #Simply a placeholder until I work on this more
 
-def makeMonsters():
-	makeForestCreatures()
-	#makeAquaticCreatures()
+
 	
-def makeForestCreatures():
-	DireRabbit = Monster("Dire Rabbit")
-	DireRabbit.setStats(15, 12, 16, 16, 12, 12)
-	DireRabbit.setAttacks({"Bite": [1, 6], "Feral Bite": [3,4]})
+class MonsterHandler:
+	def __init__(self):
+		self.makeMonsters()
+
+	def makeMonsters(self):
+		self.monsterGroups = {}
+		self.monsterGroups["Forest"] = makeForestCreatures()
+		#self.monsterGroups["Cave"] = makeCaveCreatures()
+		#self.monsterGroups["Highlands"] = makeHighlandCreatures()
+		#self.monsterGroups["Dungeon"] = makeDungeonCreatures()
+		#self.monsterGroups["Elite"] = makeEliteCreatures()
+		
+	def makeForestCreatures(self):
+		forestMobs = []
+		
+		#1) Instantiate the monster with name
+		#2) Set basic stats
+		#3) Set its possible list of attacks [rolls, maxnumber] [3,6] will "roll" a 6 sided die 3 times
+		DireRabbit = Monster("Dire Rabbit")
+		DireRabbit.setStats(15, 12, 16, 16, 12, 12)
+		DireRabbit.setAttacks({"Bite": [1, 6], "Feral Bite": [3,4]})
+		forestMobs.append(DireRabbit)
+		
+		return forestMobs
 	
 class Creature:
 	def __init__(self, Name):
@@ -57,6 +76,22 @@ class Creature:
 		self.wisdom = WIS
 		self.intelligence = INT
 		
+	def spawn(self):
+		spawn_mob = copy(self)
+		strmod = randint(-3, 3)
+		conmod = randint(-3, 3)
+		dexmod = randint(-3, 3)
+		agimod = randint(-3, 3)
+		wismod = randint(-3, 3)
+		intmod = randint(-3, 3)
+		
+		spawn_mob.strength += strmod
+		spawn_mob.constitution += conmod
+		spawn_mob.dexterity += dexmod
+		spawn_mob.agility += agimod
+		spawn_mob.wisdom += wismod
+		spawn_mob.intelligence += intmod
+		
 	def attack(self, target):
 		attacks = self.attacks.keys()
 		NameAttack = choice(list(attacks))
@@ -75,3 +110,7 @@ class Monster(Creature):
 		self.aggresive = True
 		Creature.__init__(self, Name)
 		
+class Boss(Monster):
+	
+	def __init__(self, Name):
+		pass
