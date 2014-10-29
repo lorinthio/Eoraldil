@@ -16,7 +16,7 @@ class BasicMonster:
         if(libtcod.map_is_in_fov(fov_map, monster.x, monster.y)):
             if monster.distance_to(self.target) >= 2:
                 monster.move_to_target(self.target.x, self.target.y)
-            elif player.
+            #elif player.
 
     def move_to_target(self, x, y):
         dx = x - self.x
