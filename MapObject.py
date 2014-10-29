@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-import random
+from random import *
 from sys import path as syspath
 syspath.append('.//libtcod-1.5.1')
 import libtcodpy as libtcod
-import Object
-import ObjectAis
-import Monsters
+from Object import *
+from ObjectAi import *
+from Monster import *
 
 #types
 # - small dungeon = low number of small rooms
@@ -13,14 +13,12 @@ import Monsters
 
 class Map:
 
-    def __init__(self, width, height, mapType):
-        self.width = width
-        self.height = height
+    def __init__(self, mapType):
         self.mapType = mapType
         self.rooms = []
         self.entities = []
-        self.mappedArea = self.fill_map()
         self.generate_map()
+        chunks = self.map_to_chunks()
 
     def empty_map(self):
         #fill map with "blocked" tiles first
@@ -28,6 +26,34 @@ class Map:
             for y in range(self.height)]
                 for x in range(self.width)]
         return mapped
+
+    def map_to_chunks(self):
+        count = 0
+        width = self.width // 16
+        widthremain = self.width % 16
+        if widthremain > 0:
+            width += 1
+            widthremain = widthremain / 2
+        height = self.height // 16
+        heightremain = self.height % 16
+        if heightremain > 0:
+            height += 1
+            heightremain = heightremain / 2
+            
+        for x in range(width):
+            for y in range(height):
+                for chunkx in range(16):
+                    for chunky in range(16):
+                        mapx = x*16 + chunkx - widthremain
+                        mapy = y*16 + chunky - heightremain
+                        #print(mapx, mapy)
+                        chunk = Chunk(self, x, y)
+                        try:
+                            chunk.tiles[chunkx][chunky].blocked = self.mappedArea[mapx][mapy].blocked
+                            chunk.tiles[x][y].block_sight = self.mappedArea[mapx][mapy].block_sight
+                        except IndexError:
+                            chunk.tiles[chunkx][chunky].blocked = True
+                            chunk.tiles[x][y].block_sight = True
 
     def fill_map(self):
         #fill map with "blocked" tiles first
@@ -90,9 +116,14 @@ class Map:
             print("need to write more plains generation code")
         if self.mapType == "cave":
             self.generate_cave()
-            print("need cave code")
+            #print("need cave code")
 
     def generate_small_dungeon(self):
+        self.width = 80
+        self.height = 45
+        self.mappedArea = self.fill_map()
+        self.wall_color = libtcod.Color(50, 50, 50)
+        self.floor_color = libtcod.Color(80, 80, 80)
         room_max_size = 10
         room_min_size = 5
         max_rooms = 10
@@ -167,6 +198,11 @@ class Map:
 
     # cave generation code!
     def generate_cave(self):
+        self.width = 100
+        self.height = 55
+        self.wall_color = libtcod.Color(98, 54, 35)
+        self.floor_color = libtcod.Color(112, 86, 75)
+        self.mappedArea = self.fill_map()
         self.setupCellular()
         for i in range(4):
             self.automate()
@@ -177,8 +213,8 @@ class Map:
     def randomStartPoint(self):
         pointfound = False
         while not pointfound:
-            posx = random.randint(2, self.width-2)
-            posy = random.randint(2, self.height-2)
+            posx = randint(2, self.width-2)
+            posy = randint(2, self.height-2)
             if not self.mappedArea[posx][posy].blocked:
                 break
         self.starting_point = (posx, posy)
@@ -190,7 +226,7 @@ class Map:
         ##40% is a decent percentage
         for x in range(2,self.width-2):
             for y in range(2,self.height-2):
-                r = random.randint(1,100)
+                r = randint(1,100)
                 if r > 40:
                     self.mappedArea[x][y].blocked = False
                     self.mappedArea[x][y].block_sight = False
@@ -269,11 +305,12 @@ class Map:
 
 class Tile:
     #a tile of the map and its properties
-    def __init__(self, blocked, block_sight=None, tileType=None):
+    def __init__(self, blocked, block_sight=None, tileType=None, color=None):
         self.blocked = blocked
         self.explored = False
         self.slows = False
         self.tileType = tileType
+        self.color = color
 
         #by default, if a tile is blocked, it also blocks sight
         if block_sight is None:
@@ -283,15 +320,16 @@ class Chunk:
 
     def __init__(self, map, posx, posy):
         self.owner = map
-        self.tiles = empty_chunk()
+        self.tiles = self.empty_chunk()
+        self.objects = ()
         self.posx = posx
         self.posy = posy
 
     def empty_chunk(self):
         #fill map with "blocked" tiles first
         mapped = [[Tile(False)
-            for y in range(32)]
-                for x in range(32)]
+            for y in range(16)]
+                for x in range(16)]
         return mapped
 
 class RectRoom:
