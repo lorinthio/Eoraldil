@@ -5,7 +5,8 @@ import libtcodpy as libtcod
 
 class EntityObject():
 
-    def __init__(self, x, y, char, color, solid=False):
+    def __init__(self, x, y, char, color, solid=False, localMap=None):
+        self.localMap = localMap
         self.x = x
         self.y = y
         self.char = char
@@ -35,10 +36,10 @@ class EntityObject():
 
         return False
 
-    def draw(self, fov_map, console):
-        if libtcod.map_is_in_fov(fov_map, self.x, self.y):
-            libtcod.console_set_default_foreground(console, self.color)
-            libtcod.console_put_char(console, self.x, self.y, self.char, libtcod.BKGND_NONE)
+    def draw(self, console):
+        #if libtcod.map_is_in_fov(fov_map, self.x, self.y):
+        libtcod.console_set_default_foreground(console, self.color)
+        libtcod.console_put_char(console, self.x, self.y, self.char, libtcod.BKGND_NONE)
 
     def clear(self, console):
         libtcod.console_put_char(console, self.x, self.y, ' ', libtcod.BKGND_NONE)
