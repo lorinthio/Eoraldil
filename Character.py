@@ -1,4 +1,6 @@
 from Item import *
+from Object import *
+import libtcodpy as libtcod
 
 #When saving character data, this will need a mix of database and Pickle, so we
 #   can save/load objects directly. As the modified items will be hard to store
@@ -7,9 +9,12 @@ from Item import *
 
 
 # Generic player class, not implemented yet. Eventually will store connection data also for Multiplayer
-class Player:
+class Player(EntityObject):
 	
 	def __init__(self, name):
+		#Position object
+		EntityObject.__init__(self, 1, 1, '@', libtcod.blue, solid=True)
+		
 		#Equipment
 		self.mainHand = None
 		self.offHand = None
