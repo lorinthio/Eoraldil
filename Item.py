@@ -1,5 +1,6 @@
 from random import *
 from copy import *
+from Object import *
 
 #CreateItems generates the basic data (needs to put into sqlite for easy data holding)
 #                          AKA database vs RAM = database easier on system
@@ -8,7 +9,6 @@ def createItems():
 
 	#Weapon
 	makeWeapons(IH)
-	
 	
 	#Armor Creations
 	makeClothArmor(IH)
@@ -20,6 +20,13 @@ def createItems():
 	#    The ItemHandler is the reference point between game and database
 	return IH
 
+class ItemDrop(EntityObject):
+	def __init__(self, x, y, items):
+		EntityObject.__init__(self, x, y,'%', libtcod.green, localMap=None)
+		self.x = x
+		self.y = y
+		self.items = items
+		
 
 class ItemHandler:
 # This class will be used to generate items using a subClass called ItemGenerator
@@ -39,9 +46,9 @@ class ItemHandler:
 		#Returns the generic item to the function call
 		return self.items[name]
 	
-	def genItem(self):
+	def genItem(self, level):
 		#Creates an item with a chance for a special modifier (known as identifier)
-		return self.generator.makeItem()
+		return self.generator.makeItem(level)
 
 class ItemGenerator:
 	
@@ -55,7 +62,7 @@ class ItemGenerator:
 	#This method creates an item and gives a 20% chance to add an identifier
 	       #Later I will add different rarity chances as well as different
 	       #          level ranges for different types of identifiers
-	def makeItem(self):
+	def makeItem(self, level):
 		itemlist = self.itemHandler.items.keys()
 		item = self.itemHandler.getItem(choice(list(itemlist)))
 		
@@ -188,7 +195,7 @@ class Equipment:
 #The main class for creation of weapon objects
 class Weapon(Equipment):
 	
-	def __init__(self, name, rolls, max, dType, slot=None, wType="Normal"):
+	def __init__(self, name, rolls, max, dType, slot=None, wType="Normal", level=1):
 		Equipment.__init__(self)
 		self.name = name
 		self.rolls = rolls
@@ -208,7 +215,7 @@ class Weapon(Equipment):
 #The main class for creation of armor objects
 class Armor(Equipment):
 	
-	def __init__(self, name, armor, armorType, slot=None):
+	def __init__(self, name, armor, armorType, slot=None, level=1):
 		Equipment.__init__(self)
 		self.name = name
 		self.armor = armor
