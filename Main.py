@@ -12,12 +12,19 @@ def main():
 	player.equipClass("Warrior")
 	
 	local_map = Map("cave")
-	startx, starty = local_map.starting_point
+	(startx, starty) = local_map.starting_point
 	
 	player.x = startx
 	player.y = starty
 	
+	print(player.x, player.y)
+	
 	camera = PlayerCamera(player.x, player.y, player, local_map)
+	
+	player.camera = camera
+	camera.move_camera()
+	
+	print(camera.x, camera.y)
 	
 	#Holds current area objects (while be iteratted based on local chunks and objects those chunks hold)
 	local_map_objects = [player]
@@ -32,22 +39,22 @@ def main():
 	libtcod.console_init_root(SCREEN_W, SCREEN_H, 'Eoraldil', False)
 	libtcod.sys_set_fps(LIMIT_FPS)
 	con = libtcod.console_new(SCREEN_W, SCREEN_H)
-	
+	camera.move_camera()
 	dropItem(30, 30, local_map_objects)
 	
 	while not libtcod.console_is_window_closed():
-		    render(con, local_map_objects, local_map, player, camera)
-		
-		    libtcod.console_blit(con, 0, 0, SCREEN_W, SCREEN_H, 0, 0, 0)
-		    libtcod.console_flush()
+	    render(con, local_map_objects, player)
+	
+	    libtcod.console_blit(con, 0, 0, SCREEN_W, SCREEN_H, 0, 0, 0)
+	    libtcod.console_flush()
+	
+	    for object in local_map_objects:
+		object.clear(con)
 		    
-		    for object in local_map_objects:
-			    object.clear(con)
-		 
-		    #handle keys and exit game if needed
-		    exit = handle_keys(player, local_map, local_map_objects)
-		    if exit:
-			    break
+	    #handle keys and exit game if needed
+	    exit = handle_keys(player, local_map, local_map_objects)
+	    if exit:
+		break
 
 class PlayerCamera:
 	
@@ -76,9 +83,9 @@ class PlayerCamera:
 	 
 		#if x != camera_x or y != camera_y: fov_recompute = True
 	 
-		(camera_x, camera_y) = (x, y)
+		(self.x, self.y) = (x, y)
 	
-	def to_camera_coordinates(x, y):
+	def to_camera_coordinates(self, x, y):
 		#convert coordinates on the map to coordinates on the screen
 		(x, y) = (x - self.x, y - self.y)
 	 
@@ -86,28 +93,40 @@ class PlayerCamera:
 			return (None, None)  #if it's outside the view, return nothing
 	 
 		return (x, y)
+	
+	def update(self, console, objects):
+		self.move_camera()
+		self.draw(console, objects)
+	
+	def draw(self, con, objects):
+		Map = self.Map
+		camera = self
+		
+		for y in range(camera.height):
+			for x in range(camera.width):
+				map_x = camera.x + x
+				map_y = camera.y + y
+					
+				try:
+					tile = self.Map.mappedArea[map_x][map_y]
+				except:
+					tile = Tile(True)
+					
+				if tile.blocked:
+					libtcod.console_set_char_background(con, x, y, Map.wall_color, libtcod.BKGND_SET )
+				elif tile.tileType == "water":
+					libtcod.console_set_char_background(con, x, y, libtcod.blue, libtcod.BKGND_SET )
+				elif not tile.blocked:
+					libtcod.console_set_char_background(con, x, y, Map.floor_color, libtcod.BKGND_SET )
+					
+		for object in objects:
+			if camera.x <= object.x <= (camera.x + camera.width) and camera.y <= object.y <= (camera.y + camera.height):
+				object.draw(con)		
 
-def render(con, objects, Map, player, camera):
-	for object in objects:
-		object.draw(con)
-	
-	camera.move_camera()	
-	
-	for y in range(80):
-		for x in range(50):
-			(map_x, map_y) = (camera.x + x, camera.y + y)
-				
-			try:
-				tile = Map.mappedArea[map_x][map_y]
-			except:
-				tile = Tile(True)
-				
-			if tile.blocked:
-				libtcod.console_set_char_background(con, x, y, Map.wall_color, libtcod.BKGND_SET )
-			elif tile.tileType == "water":
-				libtcod.console_set_char_background(con, x, y, libtcod.blue, libtcod.BKGND_SET )
-			elif not tile.blocked:
-				libtcod.console_set_char_background(con, x, y, Map.floor_color, libtcod.BKGND_SET )
+def render(con, objects, player):	
+	camera = player.camera
+	camera.update(con, objects)
+
 
 def handle_keys(player, Map, objects):
 	#movement keys
