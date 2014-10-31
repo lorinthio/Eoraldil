@@ -44,16 +44,16 @@ class Map:
             for y in range(height):
                 for chunkx in range(16):
                     for chunky in range(16):
-                        mapx = x*16 + chunkx - widthremain
-                        mapy = y*16 + chunky - heightremain
+                        mapx = int(x*16 + chunkx - widthremain)
+                        mapy = int(y*16 + chunky - heightremain)
                         #print(mapx, mapy)
                         chunk = Chunk(self, x, y)
                         try:
                             chunk.tiles[chunkx][chunky].blocked = self.mappedArea[mapx][mapy].blocked
-                            chunk.tiles[x][y].block_sight = self.mappedArea[mapx][mapy].block_sight
+                            chunk.tiles[chunkx][chunky].block_sight = self.mappedArea[mapx][mapy].block_sight
                         except IndexError:
                             chunk.tiles[chunkx][chunky].blocked = True
-                            chunk.tiles[x][y].block_sight = True
+                            chunk.tiles[chunkx][chunky].block_sight = True
 
     def fill_map(self):
         #fill map with "blocked" tiles first
@@ -198,8 +198,8 @@ class Map:
 
     # cave generation code!
     def generate_cave(self):
-        self.width = 100
-        self.height = 55
+        self.width = 200
+        self.height = 100
         self.wall_color = libtcod.Color(98, 54, 35)
         self.floor_color = libtcod.Color(112, 86, 75)
         self.mappedArea = self.fill_map()
