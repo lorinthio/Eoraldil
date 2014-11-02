@@ -1,4 +1,6 @@
 from Item import *
+from Object import *
+import libtcodpy as libtcod
 
 #When saving character data, this will need a mix of database and Pickle, so we
 #   can save/load objects directly. As the modified items will be hard to store
@@ -7,9 +9,12 @@ from Item import *
 
 
 # Generic player class, not implemented yet. Eventually will store connection data also for Multiplayer
-class Player:
+class Player(EntityObject):
 	
 	def __init__(self, name):
+		#Position object
+		EntityObject.__init__(self, 1, 1, '@', libtcod.blue, solid=True)
+		
 		#Equipment
 		self.mainHand = None
 		self.offHand = None
@@ -41,8 +46,12 @@ class Player:
 	def equipClass(self, className):
 		# Saves the characters current class in its storage then loads the 
 		#      desired class to curClass
-		self.classes[curClass.name] = curClass
-		curClass = self.classes[className]
+		try:
+			self.classes[self.curClass.name] = self.curClass
+			self.curClass = self.classes[className]
+		except AttributeError:
+			self.curClass = self.classes[className]
+		
 		
 	def equip(self, item):
 		slot = item.slot
@@ -53,16 +62,17 @@ class Player:
 		# Check if it is a weapon or armor, then check if the character class
 		#    can equip it (equippable = True)
 		if type(item) is Weapon:
-			if item.weaponType in curClass.weaponTypes:
+			if item.weaponType in Class.weaponTypes:
 				equippable = True
 			if not equippable:
-				return print("You cannot equip this type of weapon,", item.weaponType)
+				print("You cannot equip this type of weapon,", item.weaponType)
+				return
 		elif type(item) is Armor:
 			if item.armorType in Class.armorTypes:
 				equippable = True
 			if not equippable:
-				return print("You cannot equip this type of armor,", item.armorType)			
-
+				print("You cannot equip this type of armor,", item.armorType)			
+				return
 		
 		#Checking which slot the item goes into then equips it there     
 		if slot == "MainHand":
@@ -169,7 +179,7 @@ class Warrior(CharacterClass):
 		self.agility = 14
 		self.wisdom = 12
 		self.intelligence = 12		
-
+	
 	def updateStats(self):
 		self.maxHp = 130 + ((self.constitution - 15) * 8)
 		self.maxMp = 70 + ((self.wisdom - 10) * 4)
@@ -177,7 +187,7 @@ class Warrior(CharacterClass):
 		
 		self.hpRegen = 5 + (self.constitution / 3)
 		self.mpRegen = 2 + (self.wisdom / 3)
-		self.staRegen = 8 + (self.strength / 3)
+		self.staRegen = 8 + (self.strength / 3)	
 	
 	def bash(self):
 		print("You used bash dealing, " + str((self.stength / 2) + randint(1,8)) + " damage")
@@ -213,6 +223,15 @@ class Rogue(CharacterClass):
 		self.wisdom = 12
 		self.intelligence = 12		
 	
+	def updateStats(self):
+		self.maxHp = 100 + ((self.constitution - 15) * 8)
+		self.maxMp = 70 + ((self.wisdom - 10) * 4)
+		self.maxStamina = 130 + ((self.strength - 15) * 5)
+		
+		self.hpRegen = 3 + (self.constitution / 3)
+		self.mpRegen = 3 + (self.wisdom / 3)
+		self.staRegen = 9 + (self.strength / 3)	
+	
 	def stab(self):
 		print("You used bash dealing, " + str((self.stength / 2) + randint(1,8)) + " damage")	
 		
@@ -243,6 +262,15 @@ class Cleric(CharacterClass):
 		self.agility = 12
 		self.wisdom = 16
 		self.intelligence = 12		
+	
+	def updateStats(self):
+		self.maxHp = 100 + ((self.constitution - 15) * 8)
+		self.maxMp = 100 + ((self.wisdom - 10) * 4)
+		self.maxStamina = 100 + ((self.strength - 15) * 5)
+		
+		self.hpRegen = 4 + (self.constitution / 3)
+		self.mpRegen = 4 + (self.wisdom / 3)
+		self.staRegen = 7 + (self.strength / 3)	
 	
 	def morningstar(self):
 		print("You used a Morningstar dealing, " + str(randint(1,8)) + " damage")
@@ -277,6 +305,15 @@ class Mage(CharacterClass):
 		self.agility = 15
 		self.wisdom = 16
 		self.intelligence = 16	
+	
+	def updateStats(self):
+		self.maxHp = 70 + ((self.constitution - 15) * 8)
+		self.maxMp = 150 + ((self.wisdom - 10) * 4)
+		self.maxStamina = 80 + ((self.strength - 15) * 5)
+		
+		self.hpRegen = 2 + (self.constitution / 3)
+		self.mpRegen = 5 + (self.wisdom / 3)
+		self.staRegen = 8 + (self.strength / 3)	
 	
 	def fireball(self):
 		print("You used a Fireball dealing, " + str(randint(2,8)) + " damage")

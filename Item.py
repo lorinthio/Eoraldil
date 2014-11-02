@@ -1,5 +1,6 @@
 from random import *
 from copy import *
+from Object import *
 
 #CreateItems generates the basic data (needs to put into sqlite for easy data holding)
 #                          AKA database vs RAM = database easier on system
@@ -7,16 +8,7 @@ def createItems():
 	IH = ItemHandler()
 
 	#Weapon
-	#USAGE :: Weapon(Name, DiceRolls, MaxNumber, DamageType, EquipSlot)
-	longsword = Weapon("Longsword", 1, 8, "Slash", "MainHand")
-	IH.newItem("Longsword", longsword)
-	morningstar = Weapon("Morningstar", 1, 8, "Blunt", "MainHand")
-	IH.newItem("Morningstar", morningstar)
-	rapier = Weapon("Rapier", 1, 6, "Pierce", "MainHand")
-	IH.newItem("Rapier", rapier)
-	battleaxe = Weapon("Battleaxe", 2, 6, "Slash", "2Hand", wType="Martial")
-	IH.newItem("Battleaxe", battleaxe)
-	
+	makeWeapons(IH)
 	
 	#Armor Creations
 	makeClothArmor(IH)
@@ -28,6 +20,13 @@ def createItems():
 	#    The ItemHandler is the reference point between game and database
 	return IH
 
+class ItemDrop(EntityObject):
+	def __init__(self, x, y, items):
+		EntityObject.__init__(self, x, y,'%', libtcod.green, localMap=None)
+		self.x = x
+		self.y = y
+		self.items = items
+		
 
 class ItemHandler:
 # This class will be used to generate items using a subClass called ItemGenerator
@@ -47,9 +46,9 @@ class ItemHandler:
 		#Returns the generic item to the function call
 		return self.items[name]
 	
-	def genItem(self):
+	def genItem(self, level):
 		#Creates an item with a chance for a special modifier (known as identifier)
-		return self.generator.makeItem()
+		return self.generator.makeItem(level)
 
 class ItemGenerator:
 	
@@ -63,7 +62,7 @@ class ItemGenerator:
 	#This method creates an item and gives a 20% chance to add an identifier
 	       #Later I will add different rarity chances as well as different
 	       #          level ranges for different types of identifiers
-	def makeItem(self):
+	def makeItem(self, level):
 		itemlist = self.itemHandler.items.keys()
 		item = self.itemHandler.getItem(choice(list(itemlist)))
 		
@@ -196,7 +195,7 @@ class Equipment:
 #The main class for creation of weapon objects
 class Weapon(Equipment):
 	
-	def __init__(self, name, rolls, max, dType, slot=None, wType="Normal"):
+	def __init__(self, name, rolls, max, dType, slot=None, wType="Normal", level=1):
 		Equipment.__init__(self)
 		self.name = name
 		self.rolls = rolls
@@ -216,7 +215,7 @@ class Weapon(Equipment):
 #The main class for creation of armor objects
 class Armor(Equipment):
 	
-	def __init__(self, name, armor, armorType, slot=None):
+	def __init__(self, name, armor, armorType, slot=None, level=1):
 		Equipment.__init__(self)
 		self.name = name
 		self.armor = armor
@@ -247,10 +246,23 @@ class Armor(Equipment):
 #         makeHempArmor()
 #         makeFurArmor() etc etc
 
+def makeWeapons(ItemHandler):
+	IH = ItemHandler
+	
+	#USAGE :: Weapon(Name, DiceRolls, MaxNumber, DamageType, EquipSlot)
+	longsword = Weapon("Longsword", 1, 8, "Slash", "MainHand")
+	IH.newItem("Longsword", longsword)
+	morningstar = Weapon("Morningstar", 1, 8, "Blunt", "MainHand")
+	IH.newItem("Morningstar", morningstar)
+	rapier = Weapon("Rapier", 1, 6, "Pierce", "MainHand")
+	IH.newItem("Rapier", rapier)
+	battleaxe = Weapon("Battleaxe", 2, 6, "Slash", "2Hand", wType="Martial")
+	IH.newItem("Battleaxe", battleaxe)	
 
 def makeClothArmor(ItemHandler):
 	IH = ItemHandler
 	
+	#USAGE :: Armor(Name, armor, type, slot)
 	cloth_helmet = Armor("Cloth Helmet", 1, "Cloth", "Helmet")
 	cloth_chest = Armor("Cloth Robes", 2, "Cloth", "Chest")
 	cloth_gloves = Armor("Cloth Gloves", 1, "Cloth", "Gloves")
@@ -265,6 +277,7 @@ def makeClothArmor(ItemHandler):
 def makeLeatherArmor(ItemHandler):
 	IH = ItemHandler
 	
+	#USAGE :: Armor(Name, armor, type, slot)
 	leather_helmet = Armor("Leather Helmet", 1, "Leather", "Helmet")
 	leather_chest = Armor("Leather Jerkin", 3, "Leather", "Chest")
 	leather_gloves = Armor("Leather Gloves", 1, "Leather", "Gloves")
@@ -279,6 +292,7 @@ def makeLeatherArmor(ItemHandler):
 def makeChainArmor(ItemHandler):
 	IH = ItemHandler
 	
+	#USAGE :: Armor(Name, armor, type, slot)
 	chain_helmet = Armor("Chainmail Helmet", 2, "Chain", "Helmet")
 	chain_chest = Armor("Chainmail Jerkin", 4, "Chain", "Chest")
 	chain_gloves = Armor("Chainmail Gloves", 2, "Chain", "Gloves")
@@ -294,6 +308,7 @@ def makeChainArmor(ItemHandler):
 def makePlateArmor(ItemHandler):
 	IH = ItemHandler
 	
+	#USAGE :: Armor(Name, armor, type, slot)
 	plate_helmet = Armor("Copper Plate Helmet", 3, "Plate", "Helmet")
 	plate_chest = Armor("Copper Chestplate", 5, "Plate", "Chest")
 	plate_gloves = Armor("Copper Plate Gloves", 3, "Plate", "Gloves")
