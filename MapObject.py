@@ -18,11 +18,6 @@ class Map:
         self.rooms = []
         self.entities = []
         self.generate_map()
-<<<<<<< HEAD
-        #chunks = self.map_to_chunks()
-=======
-        chunks = self.map_to_chunks()
->>>>>>> origin/master
 
     def empty_map(self):
         #fill map with "blocked" tiles first
@@ -32,10 +27,7 @@ class Map:
         return mapped
 
     def map_to_chunks(self):
-<<<<<<< HEAD
         print("Turning the map to chunks...")
-=======
->>>>>>> origin/master
         count = 0
         width = self.width // 16
         widthremain = self.width % 16
@@ -48,7 +40,7 @@ class Map:
             height += 1
             heightremain = heightremain / 2
             
-<<<<<<< HEAD
+
         total = width * height
         count = 0
         current = 0.1
@@ -58,9 +50,6 @@ class Map:
                 current += 0.1
                 count += 1
                 print(str(count * 10) + "% complete")
-=======
-        for x in range(width):
->>>>>>> origin/master
             for y in range(height):
                 for chunkx in range(16):
                     for chunky in range(16):
@@ -139,13 +128,8 @@ class Map:
             #print("need cave code")
 
     def generate_small_dungeon(self):
-<<<<<<< HEAD
         self.width = randint(70, 110)
         self.height = randint(40, 60)
-=======
-        self.width = 80
-        self.height = 45
->>>>>>> origin/master
         self.mappedArea = self.fill_map()
         self.wall_color = libtcod.Color(50, 50, 50)
         self.floor_color = libtcod.Color(80, 80, 80)
@@ -223,32 +207,21 @@ class Map:
 
     # cave generation code!
     def generate_cave(self):
-<<<<<<< HEAD
         print("generating cave...")
         self.width = randint(120, 200)
         self.height = randint(40, 100)
-=======
-        self.width = 200
-        self.height = 100
->>>>>>> origin/master
         self.wall_color = libtcod.Color(98, 54, 35)
         self.floor_color = libtcod.Color(112, 86, 75)
         self.mappedArea = self.fill_map()
         self.setupCellular()
         for i in range(4):
-<<<<<<< HEAD
             print(str(i * 20) + "%")
-=======
->>>>>>> origin/master
             self.automate()
             #self.mappedArea = self.temp_map
         self.generateWater()
         self.randomStartPoint()
-<<<<<<< HEAD
         print("100%")
         print("Map finished generating!")
-=======
->>>>>>> origin/master
 
     def randomStartPoint(self):
         pointfound = False

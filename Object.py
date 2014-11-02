@@ -35,8 +35,7 @@ class EntityObject():
                 return True
 
         return False
-
-<<<<<<< HEAD
+    
     def draw(self, console, offsetx=0, offsety=0):
         #if libtcod.map_is_in_fov(fov_map, self.x, self.y):
         libtcod.console_set_default_foreground(console, self.color)
@@ -44,15 +43,6 @@ class EntityObject():
 
     def clear(self, console, offsetx=0, offsety=0):
         libtcod.console_put_char(console, (self.x - offsetx), (self.y - offsety), ' ', libtcod.BKGND_NONE)
-=======
-    def draw(self, console):
-        #if libtcod.map_is_in_fov(fov_map, self.x, self.y):
-        libtcod.console_set_default_foreground(console, self.color)
-        libtcod.console_put_char(console, self.x, self.y, self.char, libtcod.BKGND_NONE)
-
-    def clear(self, console):
-        libtcod.console_put_char(console, self.x, self.y, ' ', libtcod.BKGND_NONE)
->>>>>>> origin/master
 
     def giveStats(self, stat):
         self.stats = stat
