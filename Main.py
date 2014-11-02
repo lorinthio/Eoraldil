@@ -18,8 +18,16 @@ def main():
 	player.x = startx
 	player.y = starty
 	
+	#FOV
+	FOV_ALGO = 0
+	FOV_LIGHT_WALLS = True
+	TORCH_RADIUS = 10
+	fov_map = libtcod.map_new(local_map.width, local_map.height)
+	for y in range(local_map.height):
+	    for x in range(local_map.width):
+		libtcod.map_set_properties(fov_map, x, y, not local_map.mappedArea[x][y].block_sight, not local_map.mappedArea[x][y].blocked)	
 	
-	camera = PlayerCamera(player, local_map)
+	camera = PlayerCamera(player, local_map, fov_map)
 	player.camera = camera
 	camera.move_camera()
 	
@@ -32,6 +40,8 @@ def main():
 	SCREEN_H = 51
 	LIMIT_FPS = 30
 	
+
+	
 	print("Instantiating libtcod")
 	libtcod.console_set_custom_font('arial10x10.png', libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
 	libtcod.console_init_root(SCREEN_W, SCREEN_H, 'Eoraldil', False)
@@ -42,9 +52,14 @@ def main():
 	
 	while not libtcod.console_is_window_closed():
 	#handle keys and exit game if needed
-		exit = handle_keys(player, local_map, local_map_objects)
+		(exit, fov_recompute) = handle_keys(player, local_map, local_map_objects)
 		if exit:
 			break	
+		
+		if fov_recompute:
+			#recompute FOV if needed (the player moved or something)
+			fov_recompute = False
+			libtcod.map_compute_fov(fov_map, player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO)		
 		
 		render(con, local_map_objects, player)
 		
@@ -64,18 +79,23 @@ def handle_keys(player, Map, objects):
 	key = libtcod.console_check_for_keypress(libtcod.KEY_PRESSED)
 	x = 0
 	y = 0
+	fov_recompute = False
 	if key.vk == libtcod.KEY_CHAR:
 		if key.c == ord('w'):
 		    y = -1
+		    fov_recompute = True
 		    #print('w')
 		elif key.c == ord('s'):
 		    y = 1
+		    fov_recompute = True
 		    #print('s')
 		elif key.c == ord('a'):
 		    x = -1
+		    fov_recompute = True
 		    #print('a')
 		elif key.c == ord('d'):
 		    x = 1
+		    fov_recompute = True
 		    #print('d')
 	player.move(x, y, Map, objects)
 	if key.vk == libtcod.KEY_ENTER and key.lalt:
@@ -83,7 +103,9 @@ def handle_keys(player, Map, objects):
 	    libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
      
 	elif key.vk == libtcod.KEY_ESCAPE:
-	    return True  #exit game		
+	    return (True, fov_recompute)  #exit game
+	
+	return(False, fov_recompute)
 
 
 def dropItem(x, y, objects):
