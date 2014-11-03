@@ -188,6 +188,7 @@ class Map:
             for y in range(room.y1 + 1, room.y2):
                 self.mappedArea[x][y].blocked = False
                 self.mappedArea[x][y].block_sight = False
+                self.mappedArea[x][y].color = self.floor_color
 
         # GENERATE ENTITIES IN THIS ROOM
         if self.mapType == "smalldungeon":
@@ -198,12 +199,14 @@ class Map:
         for x in range(min(x1, x2), max(x1, x2) + 1):
             self.mappedArea[x][y].blocked = False
             self.mappedArea[x][y].block_sight = False
+            self.mappedArea[x][y].color = self.floor_color
 
     def create_v_tunnel(self, y1, y2, x):
         #vertical tunnel
         for y in range(min(y1, y2), max(y1, y2) + 1):
             self.mappedArea[x][y].blocked = False
             self.mappedArea[x][y].block_sight = False
+            self.mappedArea[x][y].color = self.floor_color
 
     # cave generation code!
     def generate_cave(self):
@@ -217,11 +220,23 @@ class Map:
         for i in range(4):
             print(str(i * 20) + "%")
             self.automate()
-            #self.mappedArea = self.temp_map
         self.generateWater()
+        print("75%")
+        self.colorMap()
         self.randomStartPoint()
         print("100%")
         print("Map finished generating!")
+
+    def colorMap(self):
+        for x in range(self.width):
+            for y in range(self.height):
+                tile = self.mappedArea[x][y]
+                if tile.blocked:
+                    tile.color = self.wall_color
+                elif tile.tileType == "water":
+                    pass
+                else:
+                    tile.color = self.floor_color
 
     def randomStartPoint(self):
         pointfound = False
@@ -231,6 +246,15 @@ class Map:
             if not self.mappedArea[posx][posy].blocked:
                 break
         self.starting_point = (posx, posy)
+        
+    def randomPoint(self):
+        pointfound = False
+        while not pointfound:
+            posx = randint(2, self.width-2)
+            posy = randint(2, self.height-2)
+            if not self.mappedArea[posx][posy].blocked:
+                break
+        return (posx, posy)       
 
     def setupCellular(self):
         self.temp_map = self.fill_map()
@@ -240,10 +264,12 @@ class Map:
         for x in range(2,self.width-2):
             for y in range(2,self.height-2):
                 r = randint(1,100)
-                if r > 40:
+                if r > 38:
+                    self.mappedArea[x][y].color = self.floor_color
                     self.mappedArea[x][y].blocked = False
                     self.mappedArea[x][y].block_sight = False
                 else:
+                    self.mappedArea[x][y].color = self.wall_color
                     self.mappedArea[x][y].blocked = True
                     self.mappedArea[x][y].block_sight = True
 
@@ -294,14 +320,17 @@ class Map:
         noise_lacunarity = libtcod.NOISE_DEFAULT_LACUNARITY
 
         mapped = self.mappedArea
+        
+        water_color = libtcod.sky
 
         noise = libtcod.noise_new(2, noise_hurst, noise_lacunarity)
         for y in range(self.height):
                 for x in range(self.width):
                     f = [noise_zoom * x / (self.width), noise_zoom * y / (self.height)]
                     noisefloat = libtcod.noise_get(noise, f, libtcod.NOISE_PERLIN)
-                    if noisefloat >= float(0) and noisefloat <= 0.1:
+                    if noisefloat >= float(0) and noisefloat <= 0.08:
                         mapped[x][y].tileType = "water"
+                        mapped[x][y].color = water_color
                         mapped[x][y].blocked = False
                         mapped[x][y].block_sight = False
                         mapped[x][y].slows = True
