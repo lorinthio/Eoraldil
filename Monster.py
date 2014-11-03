@@ -1,5 +1,6 @@
 from random import *
 from copy import *
+from Object import *
 
 #Simply a placeholder until I work on this more
 
@@ -9,16 +10,23 @@ class MonsterHandler:
 	def __init__(self):
 		self.makeMonsters()
 
+	def spawnMonster(self, areaType):
+		if areaType == "Forest":
+			choose(self.monsterGroups["Forest"])
+		if areaType == "Cave":
+			mob = choice(self.monsterGroups["Cave"])
+			return mob
+		
 	def makeMonsters(self):
 		self.monsterGroups = {}
-		self.monsterGroups["Forest"] = makeForestCreatures()
-		#self.monsterGroups["Cave"] = makeCaveCreatures()
+		self.monsterGroups["Forest"] = self.makeForestCreatures()
+		self.monsterGroups["Cave"] = self.makeCaveCreatures()
 		#self.monsterGroups["Highlands"] = makeHighlandCreatures()
 		#self.monsterGroups["Dungeon"] = makeDungeonCreatures()
 		#self.monsterGroups["Elite"] = makeEliteCreatures()
 		
 	def makeForestCreatures(self):
-		forestMobs = []
+		forest = []
 		
 		#1) Instantiate the monster with name
 		#2) Set basic stats
@@ -26,12 +34,27 @@ class MonsterHandler:
 		DireRabbit = Monster("Dire Rabbit")
 		DireRabbit.setStats(15, 12, 16, 16, 12, 12)
 		DireRabbit.setAttacks({"Bite": [1, 6], "Feral Bite": [3,4]})
-		forestMobs.append(DireRabbit)
+		forest.append(DireRabbit)
 		
-		return forestMobs
+		return forest
 	
-class Creature:
-	def __init__(self, Name):
+	def makeCaveCreatures(self):
+		cave = []
+		
+		Bslime = Creature("Blue Slime", size="small")
+		Bslime.setStats(8, 8, 12, 16, 8, 8)
+		Bslime.setAttacks({"Suck": [1,4], "Slam": [2, 3]})
+		cave.append(Bslime)
+		
+		Gslime = Monster("Green Slime", size="small")
+		Gslime.setStats(10, 9, 13, 13, 8, 8)
+		Gslime.setAttacks({"Suck": [1,4], "Slam": [2, 3]})
+		cave.append(Gslime)
+		return cave
+		
+	
+class Creature(EntityObject):
+	def __init__(self, Name, color=libtcod.blue, size="medium"):
 		#Skill storage
 		self.name = Name
 		self.aggresive = False
@@ -48,22 +71,27 @@ class Creature:
 		self.boots = None
 		
 		# Vitals
-		self.hp = 130
-		self.maxHp = 130
+		self.size = size
 		
-		self.mp = 70
-		self.maxMp = 70
+		self.hp = 30
+		self.maxHp = 30
 		
-		self.stamina = 100
-		self.maxStamina = 100
+		self.mp = 30
+		self.maxMp = 30
+		
+		self.stamina = 30
+		self.maxStamina = 30
 		
 		# Attributes
-		self.strength = 16
-		self.constitution = 16
-		self.dexterity = 15
-		self.agility = 14
-		self.wisdom = 12
-		self.intelligence = 12
+		self.strength = 10
+		self.constitution = 10
+		self.dexterity = 10
+		self.agility = 10
+		self.wisdom = 10
+		self.intelligence = 10
+
+		# Make it a map object
+		EntityObject.__init__(self, 1, 1, self.name[0], color, solid=True)
 		
 	def setAttacks(self, attacks):
 		self.attacks = attacks
@@ -76,7 +104,17 @@ class Creature:
 		self.wisdom = WIS
 		self.intelligence = INT
 		
-	def spawn(self):
+	def updateStats(self):
+		if self.size == "small":
+			self.hp += (self.constitution - 12) * 3
+			self.maxHp = self.hp
+			self.mp += (self.wisdom - 12) * 3
+			self.maxMp = self.mp
+			self.stamina = (self.strength - 12) * 3
+			self.maxStamina = self.stamina
+		
+		
+	def spawn(self, Map):
 		spawn_mob = copy(self)
 		strmod = randint(-3, 3)
 		conmod = randint(-3, 3)
@@ -92,6 +130,10 @@ class Creature:
 		spawn_mob.wisdom += wismod
 		spawn_mob.intelligence += intmod
 		
+		spawn_mob.updateStats()
+		
+		(self.x, self.y) = Map.randomPoint()
+		
 	def attack(self, target):
 		attacks = self.attacks.keys()
 		NameAttack = choice(list(attacks))
@@ -105,10 +147,10 @@ class Creature:
 
 class Monster(Creature):
 	
-	def __init__(self, Name):
+	def __init__(self, Name, size="medium"):
 		#Skill storage
+		Creature.__init__(self, Name, libtcod.red, size)
 		self.aggresive = True
-		Creature.__init__(self, Name)
 		
 class Boss(Monster):
 	
