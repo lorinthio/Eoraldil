@@ -13,7 +13,7 @@ class Player(EntityObject):
 	
 	def __init__(self, name):
 		#Position object
-		EntityObject.__init__(self, 1, 1, '@', libtcod.blue, solid=True)
+		EntityObject.__init__(self, 1, 1, '@', libtcod.green, solid=True)
 		
 		#Equipment
 		self.mainHand = None
