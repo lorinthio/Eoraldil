@@ -13,7 +13,7 @@ from Monster import *
 
 class Map:
 
-    def __init__(self, mapType):
+    def __init__(self, mapType=""):
         self.mapType = mapType
         self.rooms = []
         self.entities = []
@@ -75,11 +75,17 @@ class Map:
                             chunk.tiles[chunkx][chunky].blocked = True
                             chunk.tiles[chunkx][chunky].block_sight = True
 
-    def fill_map(self):
+    def fill_map(self, color):
         #fill map with "blocked" tiles first
         mapped = [[Tile(True)
             for y in range(self.height)]
                 for x in range(self.width)]
+        for y in range(self.height):
+            for x in range(self.width):
+                tile = Tile(True)
+                tile.color = color
+                mapped[x][y] = tile
+        
         return mapped
 
     ### ENTITY GENERATION
@@ -128,6 +134,11 @@ class Map:
     ### MAP GENERATION
 
     def generate_map(self):
+        # if no maptype given, then pick one
+        if self.mapType == "":
+            mapTypes = ["smalldungeon", "cave", "forest"]
+            self.mapType = choice(mapTypes)
+        # Generate for the maptype
         if self.mapType == "smalldungeon":
             self.generate_small_dungeon()
         elif self.mapType == "plains":
@@ -142,14 +153,18 @@ class Map:
     def generate_small_dungeon(self):
         self.width = randint(70, 110)
         self.height = randint(40, 60)
-        self.mappedArea = self.fill_map()
+
         self.wall_color = libtcod.Color(50, 50, 50)
-        self.floor_color = libtcod.Color(80, 80, 80)
+        self.floor_color = libtcod.Color(120, 120, 120)
+        
+        self.mappedArea = self.fill_map(self.wall_color)
+
         room_max_size = 10
         room_min_size = 5
         max_rooms = 10
         num_rooms = 0
-        for r in range(max_rooms):
+        failedCount = 0
+        while failedCount <= 10:
             w = libtcod.random_get_int(0, room_min_size, room_max_size)
             h = libtcod.random_get_int(0, room_min_size, room_max_size)
             x = libtcod.random_get_int(0, 0, self.width - w - 1)
@@ -169,6 +184,7 @@ class Map:
 
                 if num_rooms == 0:
                     self.starting_point = newroom.center()
+                    print self.starting_point
 
                 (new_x, new_y) = newroom.center()
 
@@ -187,10 +203,14 @@ class Map:
                     #first move vertically, then horizontally
                     self.create_v_tunnel(prev_y, new_y, prev_x)
                     self.create_h_tunnel(prev_x, new_x, new_y)
+                    
+                #finally, append the new room to the list
+                self.rooms.append(new_room)
+                num_rooms += 1                
+            else:
+                failedCount += 1
+                
 
-            #finally, append the new room to the list
-            self.rooms.append(new_room)
-            num_rooms += 1
 
 
     def create_room(self, room):
@@ -198,35 +218,41 @@ class Map:
         self.rooms.append(room)
         for x in range(room.x1 + 1, room.x2):
             for y in range(room.y1 + 1, room.y2):
-                self.mappedArea[x][y].blocked = False
-                self.mappedArea[x][y].block_sight = False
-                self.mappedArea[x][y].color = self.floor_color
+                tile = self.mappedArea[x][y]
+                tile.blocked = False
+                tile.block_sight = False
+                tile.color = self.floor_color
 
         # GENERATE ENTITIES IN THIS ROOM
-        if self.mapType == "smalldungeon":
-            self.place_monsters(room, 2)
+        #if self.mapType == "smalldungeon":
+            #self.place_monsters(room, 2)
         return room
 
     def create_h_tunnel(self, x1, x2, y):
         for x in range(min(x1, x2), max(x1, x2) + 1):
-            self.mappedArea[x][y].blocked = False
-            self.mappedArea[x][y].block_sight = False
-            self.mappedArea[x][y].color = self.floor_color
+            tile = self.mappedArea[x][y]
+            tile.blocked = False
+            tile.block_sight = False
+            tile.color = self.floor_color
 
     def create_v_tunnel(self, y1, y2, x):
         #vertical tunnel
         for y in range(min(y1, y2), max(y1, y2) + 1):
-            self.mappedArea[x][y].blocked = False
-            self.mappedArea[x][y].block_sight = False
-            self.mappedArea[x][y].color = self.floor_color
+            tile = self.mappedArea[x][y]
+            tile.blocked = False
+            tile.block_sight = False
+            tile.color = self.floor_color
 
     def generate_forest(self):
         print("generating forest...")
         self.width = randint(100, 300)
         self.height = randint(60, 180)
+        
         self.wall_color = libtcod.Color(214, 138, 84)
         self.floor_color = libtcod.Color(99, 214, 84)
-        self.mappedArea = self.fill_map()
+
+        self.mappedArea = self.fill_map(self.wall_color)
+        
         self.setupCellular()
         for i in range(6):
             print(str(i * 15) + "%")
@@ -277,9 +303,12 @@ class Map:
         print("generating cave...")
         self.width = randint(120, 200)
         self.height = randint(40, 100)
+        
         self.wall_color = libtcod.Color(98, 54, 35)
         self.floor_color = libtcod.Color(112, 86, 75)
-        self.mappedArea = self.fill_map()
+        
+        self.mappedArea = self.fill_map(self.wall_color)
+
         self.setupCellular()
         for i in range(4):
             print(str(i * 20) + "%")
@@ -323,7 +352,7 @@ class Map:
         return (posx, posy)       
 
     def setupCellular(self):
-        self.temp_map = self.fill_map()
+        self.temp_map = self.fill_map(self.wall_color)
         ##Fill the map with ground at the specified percentage
         ##Lower numbers make more open caves, while higher numbers result in more closed in, but more un connected 'rooms'
         ##40% is a decent percentage
@@ -474,6 +503,6 @@ class RectRoom:
     def intersects(self, other):
         #returns true if this rectangle intersects with another one
         if self.x1 <= other.x2 and self.x2 >= other.x1 and self.y1 <= other.y2 and self.y2 >= other.y1:
-                    return True
+            return True
         else:
             return False

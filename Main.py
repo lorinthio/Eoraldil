@@ -29,7 +29,7 @@ def main():
 	player.equipClass("Rogue")
 		
 	#Generates the map
-	local_map = Map("forest")
+	local_map = Map("smalldungeon")
 	(startx, starty) = local_map.starting_point
 	
 	#Starts mobHandler and spawns a mob at a random spot
@@ -77,9 +77,12 @@ def main():
 		if fov_recompute:
 			#recompute FOV if needed (the player moved or something)
 			fov_recompute = False
-			libtcod.map_compute_fov(fov_map, player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO)		
+			libtcod.map_compute_fov(fov_map, player.x, player.y, local_map.fov_range, FOV_LIGHT_WALLS, FOV_ALGO)		
 		
-		(exit, fov_recompute) = handle_keys(player, local_map, local_map_objects, gui)
+		(exit, fov_recompute, changeMap, fov_Map) = handle_keys(player, local_map, local_map_objects, gui)
+		if changeMap is not None:
+			local_map = changeMap
+			fov_map = fov_Map
 		if exit:
 			break
 		
@@ -105,13 +108,15 @@ def render(con, objects, player, gui):
 	gui.update()
 
 
-def handle_keys(player, Map, objects, gui):
+def handle_keys(player, local_Map, objects, gui):
 	#movement keys
 	key = libtcod.console_check_for_keypress(libtcod.KEY_PRESSED)
 	x = 0
 	y = 0
 	fov_recompute = False
+	mapChange = False
 	if key.vk == libtcod.KEY_CHAR:
+		#Movement
 		if key.c == ord('w'):
 		    y = -1
 		    fov_recompute = True
@@ -128,20 +133,50 @@ def handle_keys(player, Map, objects, gui):
 		    x = 1
 		    fov_recompute = True
 		    #print('d')
+		    
+		#Side Windows    
 		elif key.c == ord('c'):
 		    gui.activeSide = gui.character
 		elif key.c == ord('i'):
 		    gui.activeSide = gui.inventory
-	player.move(x, y, Map, objects)
+		    
+		#Misc
+		elif key.c == ord("n"):
+			(local_Map, fov_Map) = newMap(player)
+			fov_recompute = True
+			mapChange = True			
+	
+	if not mapChange:
+		if fov_recompute:
+			player.move(x, y, local_Map, objects)
 	if key.vk == libtcod.KEY_ENTER and key.lalt:
 	    #Alt+Enter: toggle fullscreen
 	    libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
      
 	elif key.vk == libtcod.KEY_ESCAPE:
-	    return (True, fov_recompute)  #exit game
+	    return (True, fov_recompute, None, None)  #exit game
 	
-	return(False, fov_recompute)
+	if not mapChange:	
+		return(False, fov_recompute, None, None)
+	else:
+		return(False, fov_recompute, local_Map, fov_Map)
 
+def newMap(player):
+	local_Map = Map()
+	(player.x, player.y) = local_Map.starting_point
+	player.camera.Map = local_Map
+	player.camera.move_camera()
+	fov_Map = libtcod.map_new(local_Map.width, local_Map.height)
+	for y in range(local_Map.height):
+	    for x in range(local_Map.width):
+		libtcod.map_set_properties(fov_Map, x, y, not local_Map.mappedArea[x][y].block_sight, not local_Map.mappedArea[x][y].blocked)		    
+	libtcod.map_compute_fov(fov_Map, player.x, player.y, local_Map.fov_range, True, 0)
+	
+	player.camera.Map = local_Map
+	player.camera.fov_map = fov_Map
+	player.camera.move_camera()
+	
+	return (local_Map, fov_Map)
 
 def dropItem(x, y, objects):
 	#Currently creates the ItemHandler, but later this will be in the server file

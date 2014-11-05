@@ -7,6 +7,9 @@ from Object import *
 def createItems():
 	IH = ItemHandler()
 
+	#BasicItems
+	makeItems(IH)
+
 	#Weapon
 	makeWeapons(IH)
 	
@@ -262,6 +265,11 @@ class Armor(Equipment):
 #         makeRaggedArmor()
 #         makeHempArmor()
 #         makeFurArmor() etc etc
+
+def makeItems(IH):
+	healPot = Consumable("Basic Healing Potion", "Heals the user for 30 HP", 
+	                     {"Heal": 30})
+	IH.newItem("Basic Healing Potion", healPot)
 
 def makeWeapons(ItemHandler):
 	IH = ItemHandler
