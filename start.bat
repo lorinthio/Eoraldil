@@ -1,1 +1,2 @@
 python Main.py
+@PAUSE

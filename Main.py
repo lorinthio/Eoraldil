@@ -4,17 +4,44 @@ from Item import *
 from Monster import *
 from MapObject import *
 from Camera import *
+from GUI import *
 import libtcodpy as libtcod
 
 
 def main():
+	#Window
+	SCREEN_W = 81
+	SCREEN_H = 51
+	LIMIT_FPS = 30
+	
+	#Make Libtcod Available
+	print("Instantiating libtcod")
+	libtcod.console_set_custom_font('arial10x10.png', libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
+	libtcod.console_init_root(SCREEN_W, SCREEN_H, 'Eoraldil', False)
+	libtcod.sys_set_fps(LIMIT_FPS)
+	
+	con = libtcod.console_new(SCREEN_W, SCREEN_H)	
+	
+	#Default Character fill in
 	player = Player("Lorinthio")
 	player.createPlayer()
 	player.equipClass("Warrior")
-	
+		
+	#Generates the map
 	local_map = Map("cave")
 	(startx, starty) = local_map.starting_point
 	
+	#Starts mobHandler and spawns a mob at a random spot
+	local_map_objects = [player]
+	
+	MH = MonsterHandler()
+	for i in range(50):
+		mob = MH.spawnMonster("Cave")
+		mob.spawn(local_map)
+		mob.setTarget(player)
+		local_map_objects.append(mob)
+	
+	#Sets player to the location given from the starting point
 	player.x = startx
 	player.y = starty
 	
@@ -22,56 +49,59 @@ def main():
 	FOV_ALGO = 0
 	FOV_LIGHT_WALLS = True
 	TORCH_RADIUS = 10
+	
+	#GUI	
+	gui = GUIHandler(player)
+	
 	fov_map = libtcod.map_new(local_map.width, local_map.height)
 	for y in range(local_map.height):
 	    for x in range(local_map.width):
-		libtcod.map_set_properties(fov_map, x, y, not local_map.mappedArea[x][y].block_sight, not local_map.mappedArea[x][y].blocked)	
+		libtcod.map_set_properties(fov_map, x, y, not local_map.mappedArea[x][y].block_sight, not local_map.mappedArea[x][y].blocked)
 	
 	camera = PlayerCamera(player, local_map, fov_map)
 	player.camera = camera
 	camera.move_camera()
 	
 	#Holds current area objects (while be iteratted based on local chunks and objects those chunks hold)
-	local_map_objects = [player]
+	
 	
 	#makeMonsters()
-
-	SCREEN_W = 81
-	SCREEN_H = 51
-	LIMIT_FPS = 30
 	
-
-	
-	print("Instantiating libtcod")
-	libtcod.console_set_custom_font('arial10x10.png', libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
-	libtcod.console_init_root(SCREEN_W, SCREEN_H, 'Eoraldil', False)
-	libtcod.sys_set_fps(LIMIT_FPS)
-	
-	con = libtcod.console_new(SCREEN_W, SCREEN_H)
 	#dropItem(30, 30, local_map_objects)
+
+	fov_recompute = True
 	
 	while not libtcod.console_is_window_closed():
 	#handle keys and exit game if needed
-		(exit, fov_recompute) = handle_keys(player, local_map, local_map_objects)
-		if exit:
-			break	
-		
 		if fov_recompute:
 			#recompute FOV if needed (the player moved or something)
 			fov_recompute = False
 			libtcod.map_compute_fov(fov_map, player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO)		
 		
-		render(con, local_map_objects, player)
+		(exit, fov_recompute) = handle_keys(player, local_map, local_map_objects)
+		if exit:
+			break
 		
-		libtcod.console_blit(con, 0, 0, SCREEN_W, SCREEN_H, 0, 0, 0)
-		libtcod.console_flush()
+		for object in local_map_objects:
+			if isinstance(object, Monster):
+				object.takeAction(local_map, local_map_objects)
+		
+		render(con, local_map_objects, player, gui_panels)
+		
+		#messagePanel.update()
+		
+		libtcod.console_blit(con, 0, 0, camera.width, camera.height, 0, 0, 0)
+		libtcod.console_flush()		
 		
 		for object in local_map_objects:
 			object.clear(con, camera.x, camera.y)
 
-def render(con, objects, player):	
+
+
+def render(con, objects, player, gui_panels):	
 	camera = player.camera
 	camera.update(con, objects)
+	gui.update()
 
 
 def handle_keys(player, Map, objects):
