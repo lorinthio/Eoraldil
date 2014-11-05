@@ -1,10 +1,6 @@
 from random import *
 from copy import *
 from Object import *
-<<<<<<< HEAD
-from ObjectAi import *
-=======
->>>>>>> origin/master
 
 #Simply a placeholder until I work on this more
 
@@ -117,11 +113,6 @@ class Creature(EntityObject):
 			self.stamina = (self.strength - 12) * 3
 			self.maxStamina = self.stamina
 		
-<<<<<<< HEAD
-	def setTarget(self, target):
-		self.target = target
-=======
->>>>>>> origin/master
 		
 	def spawn(self, Map):
 		spawn_mob = copy(self)
@@ -153,18 +144,12 @@ class Creature(EntityObject):
 			damage += randint(1, attack[1])
 		print(self.name + " has used " + NameAttack + " for " + str(damage) + " damage.")
 
-	def takeAction(self, Map, MapObjects):
-		self.actor.takeAction(Map, MapObjects)
 
 class Monster(Creature):
 	
 	def __init__(self, Name, size="medium"):
 		#Skill storage
 		Creature.__init__(self, Name, libtcod.red, size)
-<<<<<<< HEAD
-		self.actor = BasicMonster(self)
-=======
->>>>>>> origin/master
 		self.aggresive = True
 		
 class Boss(Monster):

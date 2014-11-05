@@ -192,6 +192,23 @@ class Equipment:
 		else:
 			return False
 		
+class Consumable:
+	
+	def __init__(self, name, details, effect, uses=1):
+		self.name = name
+		self.details = details
+		self.effects = effect
+		self.uses = uses
+		
+	def use(self, target):
+		effects = self.effects
+		for effect in effects:
+			activateEffect(effect, target)
+			
+	#def activateEffect(self, effect, target):
+		#if effect == "Heal":
+			#target.hp
+		
 #The main class for creation of weapon objects
 class Weapon(Equipment):
 	

@@ -13,7 +13,7 @@ class Player(EntityObject):
 	
 	def __init__(self, name):
 		#Position object
-		EntityObject.__init__(self, 1, 1, '@', libtcod.blue, solid=True)
+		EntityObject.__init__(self, 1, 1, name[0], libtcod.black, solid=True)
 		
 		#Equipment
 		self.mainHand = None
@@ -117,14 +117,25 @@ class Player(EntityObject):
 		
 		#Gets current class equipped and gives it exp
 		Class = self.curClass
-		while Class.tnl <= 0:
+		
+		Class.exp += exp
+		
+		while Class.exp >= Class.tnl:
+			Class.exp -= Class.tnl
 			nextLevel = 800 + (Class.level * 200)
-			Class.tnl += nextLevel
+			Class.tnl = nextLevel
 			Class.level += 1
+			
+			# attribute points at every 3rd level  attributes = core stat upgrades
+			# skill points at every 2nd level      skills = specific spell/skill increases
+			# talent points at every 4th level     talents = special passive class upgrades (aggro, health, etc)
+			
 			if Class.level % 3 == 0:
 				Class.attributePoints += 1
 			elif Class.level % 2 == 0:
 				Class.skillPoints += 1	
+			elif Class.level % 4 == 0:
+				Class.talentPoints += 1
 
 class CharacterClass:
 	
@@ -134,7 +145,7 @@ class CharacterClass:
 		self.attributePoints = 5
 		
 		# Level / Exp
-		self.experience = 0
+		self.exp = 0
 		self.tnl = 1000
 		self.level = 1
 	

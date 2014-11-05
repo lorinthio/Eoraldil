@@ -18,6 +18,17 @@ class Map:
         self.rooms = []
         self.entities = []
         self.generate_map()
+        self.fov_range = self.fovFind()
+        
+    def fovFind(self):
+        if self.mapType == "smalldungeon":
+            return 12
+        elif self.mapType == "plains":
+            return 18 
+        if self.mapType == "cave":
+            return 10
+        elif self.mapType == "forest":
+            return 15
 
     def empty_map(self):
         #fill map with "blocked" tiles first
@@ -119,13 +130,14 @@ class Map:
     def generate_map(self):
         if self.mapType == "smalldungeon":
             self.generate_small_dungeon()
-        if self.mapType == "plains":
+        elif self.mapType == "plains":
             self.mappedArea = self.empty_map()
             # self.generate_plains()
-            print("need to write more plains generation code")
-        if self.mapType == "cave":
+            print("need to write more plains generation code")  
+        elif self.mapType == "cave":
             self.generate_cave()
-            #print("need cave code")
+        elif self.mapType == "forest":
+            self.generate_forest()
 
     def generate_small_dungeon(self):
         self.width = randint(70, 110)
@@ -208,6 +220,58 @@ class Map:
             self.mappedArea[x][y].block_sight = False
             self.mappedArea[x][y].color = self.floor_color
 
+    def generate_forest(self):
+        print("generating forest...")
+        self.width = randint(100, 300)
+        self.height = randint(60, 180)
+        self.wall_color = libtcod.Color(214, 138, 84)
+        self.floor_color = libtcod.Color(99, 214, 84)
+        self.mappedArea = self.fill_map()
+        self.setupCellular()
+        for i in range(6):
+            print(str(i * 15) + "%")
+            self.automate()
+        self.generateWater()
+        self.colorMap()
+        self.randomStartPoint()
+        self.place_trees()
+        print("100%")
+        print("Map finished generating!")
+
+    def place_trees(self):
+        if self.mapType == "forest":
+            leaves = libtcod.darker_green
+            stump = libtcod.dark_sepia
+            ##     Shape
+            ##       #
+            ##      ###
+            ##       #
+            
+            for i in range(80):
+                (posx, posy) = self.randomPoint()
+                #make stump
+                tile = self.mappedArea[posx][posy]
+                tile.color = stump
+                tile.blocked = True
+                tile.block_sight = True
+                #make leaves
+                self.makeLeaf(posx+1, posy-1, leaves)
+                self.makeLeaf(posx, posy-1, leaves)
+                self.makeLeaf(posx-1, posy-1, leaves)
+                self.makeLeaf(posx+1, posy-2, leaves)
+                self.makeLeaf(posx, posy-2, leaves)
+                self.makeLeaf(posx-1, posy-2, leaves)                
+                self.makeLeaf(posx, posy-3, leaves)
+            
+    def makeLeaf(self, posx, posy, color):
+        tile = self.mappedArea[posx][posy]
+        tile.color = color
+        tile.blocked = False
+        tile.block_sight = False
+        tile.tileType = "leaves"        
+            
+            
+
     # cave generation code!
     def generate_cave(self):
         print("generating cave...")
@@ -249,15 +313,13 @@ class Map:
         
     def randomPoint(self):
         pointfound = False
+        ignoredTiles = ["water", "leaves"]
         while not pointfound:
             posx = randint(2, self.width-2)
             posy = randint(2, self.height-2)
             if not self.mappedArea[posx][posy].blocked:
-                break
-<<<<<<< HEAD
-        print(posx, posy)
-=======
->>>>>>> origin/master
+                if self.mappedArea[posx][posy].tileType not in ignoredTiles:
+                    break
         return (posx, posy)       
 
     def setupCellular(self):
@@ -265,10 +327,15 @@ class Map:
         ##Fill the map with ground at the specified percentage
         ##Lower numbers make more open caves, while higher numbers result in more closed in, but more un connected 'rooms'
         ##40% is a decent percentage
+        if self.mapType == "forest":
+            rCheck = 34
+        elif self.mapType == "cave":
+            rCheck = 38
+        
         for x in range(2,self.width-2):
             for y in range(2,self.height-2):
                 r = randint(1,100)
-                if r > 38:
+                if rCheck < r:
                     self.mappedArea[x][y].color = self.floor_color
                     self.mappedArea[x][y].blocked = False
                     self.mappedArea[x][y].block_sight = False
@@ -326,18 +393,31 @@ class Map:
         mapped = self.mappedArea
         
         water_color = libtcod.sky
+        water_color1 = water_color - libtcod.Color(6, 6, 6)
+        water_color2 = water_color1 - libtcod.Color(6, 6, 6)
+        water_color3 = water_color2 - libtcod.Color(8, 8, 8)
 
         noise = libtcod.noise_new(2, noise_hurst, noise_lacunarity)
         for y in range(self.height):
                 for x in range(self.width):
                     f = [noise_zoom * x / (self.width), noise_zoom * y / (self.height)]
-                    noisefloat = libtcod.noise_get(noise, f, libtcod.NOISE_PERLIN)
+                    noisefloat = abs(libtcod.noise_get(noise, f, libtcod.NOISE_PERLIN))
                     if noisefloat >= float(0) and noisefloat <= 0.08:
-                        mapped[x][y].tileType = "water"
-                        mapped[x][y].color = water_color
-                        mapped[x][y].blocked = False
-                        mapped[x][y].block_sight = False
-                        mapped[x][y].slows = True
+                        tile = mapped[x][y]
+                        tile.tileType = "water"
+                        tile.blocked = False
+                        tile.block_sight = False
+                        tile.slows = True
+                        #Depth = Color darkness
+                        depth = 10 - (noisefloat * 100)
+                        if depth <= 5:
+                            tile.color = water_color
+                        elif 5 < depth <= 7:
+                            tile.color = water_color1
+                        elif 7 < depth < 9:
+                            tile.color = water_color2
+                        else:
+                            tile.color = water_color3
 
         #Block the edges of the map so player can't crash the game
         for y in range(self.height):

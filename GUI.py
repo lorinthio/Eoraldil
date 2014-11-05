@@ -1,9 +1,6 @@
 import textwrap
 import libtcodpy as libtcod
 
-<<<<<<< HEAD
-#class CharacterPanel:
-
 class GUIHandler:
     def __init__(self, player):
 	self.gui_panels = []
@@ -11,21 +8,29 @@ class GUIHandler:
 	#Message Panels
 	gui_message = MessagePanel(player, 40, 41, 40, 10)
 	gui_message.message("Welcome to Eoraldil!", libtcod.yellow)
-	gui_message.message("Your journey beging... in a cave. A dark, and lonely cave", libtcod.grey)
-	gui_panels.append(gui_message)
+	gui_message.message("Your journey begins... in a cave. A dark, and lonely cave", libtcod.grey)
+	self.gui_panels.append(gui_message)
 	
+	#Inventory Panel
+	inventory = InventoryPanel(player, 62, 0, 19, 39)
+	self.inventory = inventory
+	
+	#Character Panel
+	character = CharacterPanel(player, 62, 0, 19, 39)
+	self.activeSide = character
+	self.character = character
+	
+	        
 	#Vital Panels
 	gui_vitals = VitalPanel(player, 0, 41, 40, 10)
-	gui_panels.append(gui_vitals)	
+	self.gui_panels.append(gui_vitals)	
 	
     def update(self):
 	for panel in self.gui_panels:
 	    panel.update()
+	self.activeSide.update()
 
 class MessagePanel:
-=======
-class MessageHandler:
->>>>>>> origin/master
     
     def __init__(self, player, posX, posY, length, height, rows=7):
         self.msgs = []
@@ -50,8 +55,6 @@ class MessageHandler:
      
 	    #add the new line as a tuple, with the text and the color
 	    self.msgs.append( (line, color) )
-           
-<<<<<<< HEAD
        
                 
     def update(self):
@@ -72,6 +75,48 @@ class MessageHandler:
 	#blit the contents of "panel" to the root console
 	libtcod.console_blit(panel, 0, 0, self.length, self.height, 0, self.posX, self.posY)  	
 
+class InventoryPanel(MessagePanel):
+    
+    def __init__(self, player, posX, posY, length, height, rows=39):
+	MessagePanel.__init__(self, player, posX, posY, length, height, rows)
+	self.refresh()
+	
+    def refresh(self):
+	player = self.player
+	self.message("==========")
+	self.message("INVENTORY")
+	self.message("==========")
+	if player.mainHand == None:
+	    self.message("Main : None")
+	else:
+	    self.message("Main : " + str(player.mainHand.name))
+	    
+
+class CharacterPanel(MessagePanel):
+    
+    def __init__(self, player, posX, posY, length, height, rows=15):
+	counter = 0
+	MessagePanel.__init__(self, player, posX, posY, length, height, rows)
+	self.refresh()
+
+    def refresh(self):
+	player = self.player
+	Class = player.curClass
+	self.message("==========")
+	self.message("CHARACTER")
+	self.message("==========")
+	self.message("Name : " + str(player.name))
+	self.message("Class : " + str(Class.name))
+	self.message("Level : " + str(Class.level))
+	self.message("==========")
+	self.message("Core Stats")
+	self.message("==========")
+	self.message("STR : " + str(Class.strength), libtcod.light_red)
+	self.message("CON : " + str(Class.constitution), libtcod.light_orange)
+	self.message("DEX : " + str(Class.dexterity), libtcod.green)
+	self.message("AGI : " + str(Class.agility), libtcod.light_green)
+	self.message("WIS : " + str(Class.wisdom), libtcod.light_blue)
+	self.message("INT : " + str(Class.intelligence), libtcod.light_purple)
 
 class VitalPanel:
     def __init__(self, player, posX, posY, length, height, rows=7):
@@ -84,8 +129,7 @@ class VitalPanel:
 	self.player = player
         self.panel = libtcod.console_new(length, height)
     
-=======
->>>>>>> origin/master
+
     def render_bar(self, x, y, total_width, name, value, maximum, bar_color, back_color):
 	panel = self.panel
 	#render a bar (HP, experience, etc). first calculate the width of the bar
@@ -101,7 +145,6 @@ class VitalPanel:
 	    libtcod.console_rect(panel, x, y, bar_width, 1, False, libtcod.BKGND_SCREEN)
      
 	#finally, some centered text with the values
-<<<<<<< HEAD
 	libtcod.console_set_default_foreground(panel, libtcod.black)
 	libtcod.console_print_ex(panel, x + total_width / 2, y, libtcod.BKGND_NONE, libtcod.CENTER,
             name + ': ' + str(value) + '/' + str(maximum))        
@@ -121,37 +164,4 @@ class VitalPanel:
 	    libtcod.orange, libtcod.darker_orange)
 
 	#blit the contents of "panel" to the root console
-	libtcod.console_blit(panel, 0, 0, 81, 8, 0, self.posX, self.posY)    
-=======
-	libtcod.console_set_default_foreground(panel, libtcod.white)
-	libtcod.console_print_ex(panel, x + total_width / 2, y, libtcod.BKGND_NONE, libtcod.CENTER,
-            name + ': ' + str(value) + '/' + str(maximum))           
-                
-    def update(self):
-        panel = self.panel
-	game_msgs = self.msgs
-        
-	#prepare to render the GUI panel
-	libtcod.console_set_default_background(panel, libtcod.black)
-	libtcod.console_clear(panel)
-     
-	#print the game messages, one line at a time
-	y = 1
-	for (line, color) in game_msgs:
-	    libtcod.console_set_default_foreground(panel, color)
-	    libtcod.console_print_ex(panel, 40, y, libtcod.BKGND_NONE, libtcod.LEFT, line)
-	    y += 1
-     
-	#show the player's stats
-	player = self.player
-	self.render_bar(1, 1, 20, 'HP', player.curClass.hp, player.curClass.maxHp,
-	    libtcod.red, libtcod.darker_red)
-	self.render_bar(1, 3, 20, 'MP', player.curClass.mp, player.curClass.maxMp,
-	    libtcod.blue, libtcod.darker_blue)
-	self.render_bar(1, 5, 20, 'STA', player.curClass.stamina, player.curClass.maxStamina,
-	    libtcod.orange, libtcod.darker_orange)
-     
-     
-	#blit the contents of "panel" to the root console
-        libtcod.console_blit(panel, 0, 0, 81, 8, 0, self.posX, self.posY)
->>>>>>> origin/master
+	libtcod.console_blit(panel, 0, 0, 81, 8, 0, self.posX, self.posY)

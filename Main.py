@@ -5,6 +5,7 @@ from Monster import *
 from MapObject import *
 from Camera import *
 from GUI import *
+import sys
 import libtcodpy as libtcod
 
 
@@ -23,28 +24,22 @@ def main():
 	con = libtcod.console_new(SCREEN_W, SCREEN_H)	
 	
 	#Default Character fill in
-	player = Player("Lorinthio")
+	player = Player("Phrixious")
 	player.createPlayer()
-	player.equipClass("Warrior")
+	player.equipClass("Rogue")
 		
 	#Generates the map
-	local_map = Map("cave")
+	local_map = Map("forest")
 	(startx, starty) = local_map.starting_point
 	
 	#Starts mobHandler and spawns a mob at a random spot
 	local_map_objects = [player]
 	
 	MH = MonsterHandler()
-<<<<<<< HEAD
 	for i in range(50):
 		mob = MH.spawnMonster("Cave")
 		mob.spawn(local_map)
-		mob.setTarget(player)
-=======
-	for i in range(20):
-		mob = MH.spawnMonster("Cave")
-		mob.spawn(local_map)
->>>>>>> origin/master
+		#mob.setTarget(player)
 		local_map_objects.append(mob)
 	
 	#Sets player to the location given from the starting point
@@ -54,19 +49,10 @@ def main():
 	#FOV
 	FOV_ALGO = 0
 	FOV_LIGHT_WALLS = True
-	TORCH_RADIUS = 10
+	TORCH_RADIUS = local_map.fov_range
 	
-<<<<<<< HEAD
 	#GUI	
 	gui = GUIHandler(player)
-=======
-	#GUI
-	length = 81
-	height = 7
-	gui_panel = MessageHandler(player, 0, 44, length, height)
-	gui_panel.message("Welcome to Eoraldil!", libtcod.yellow)
-	gui_panel.message("Your journey beings... in a cave", libtcod.grey)
->>>>>>> origin/master
 	
 	fov_map = libtcod.map_new(local_map.width, local_map.height)
 	for y in range(local_map.height):
@@ -93,19 +79,17 @@ def main():
 			fov_recompute = False
 			libtcod.map_compute_fov(fov_map, player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO)		
 		
-		(exit, fov_recompute) = handle_keys(player, local_map, local_map_objects)
+		(exit, fov_recompute) = handle_keys(player, local_map, local_map_objects, gui)
 		if exit:
 			break
 		
-<<<<<<< HEAD
-		for object in local_map_objects:
-			if isinstance(object, Monster):
-				object.takeAction(local_map, local_map_objects)
+
+		#for object in local_map_objects:
+			#if isinstance(object, Monster):
+				#object.takeAction(local_map, local_map_objects)
 		
-		render(con, local_map_objects, player, gui_panels)
-=======
-		render(con, local_map_objects, player, gui_panel)
->>>>>>> origin/master
+		render(con, local_map_objects, player, gui)
+
 		
 		#messagePanel.update()
 		
@@ -115,22 +99,13 @@ def main():
 		for object in local_map_objects:
 			object.clear(con, camera.x, camera.y)
 
-
-
-<<<<<<< HEAD
-def render(con, objects, player, gui_panels):	
+def render(con, objects, player, gui):	
 	camera = player.camera
 	camera.update(con, objects)
 	gui.update()
-=======
-def render(con, objects, player, panel):	
-	camera = player.camera
-	camera.update(con, objects)
-	panel.update()
->>>>>>> origin/master
 
 
-def handle_keys(player, Map, objects):
+def handle_keys(player, Map, objects, gui):
 	#movement keys
 	key = libtcod.console_check_for_keypress(libtcod.KEY_PRESSED)
 	x = 0
@@ -153,6 +128,10 @@ def handle_keys(player, Map, objects):
 		    x = 1
 		    fov_recompute = True
 		    #print('d')
+		elif key.c == ord('c'):
+		    gui.activeSide = gui.character
+		elif key.c == ord('i'):
+		    gui.activeSide = gui.inventory
 	player.move(x, y, Map, objects)
 	if key.vk == libtcod.KEY_ENTER and key.lalt:
 	    #Alt+Enter: toggle fullscreen
