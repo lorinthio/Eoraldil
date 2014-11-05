@@ -254,7 +254,10 @@ class Map:
             posy = randint(2, self.height-2)
             if not self.mappedArea[posx][posy].blocked:
                 break
+<<<<<<< HEAD
         print(posx, posy)
+=======
+>>>>>>> origin/master
         return (posx, posy)       
 
     def setupCellular(self):

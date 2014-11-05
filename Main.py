@@ -35,10 +35,16 @@ def main():
 	local_map_objects = [player]
 	
 	MH = MonsterHandler()
+<<<<<<< HEAD
 	for i in range(50):
 		mob = MH.spawnMonster("Cave")
 		mob.spawn(local_map)
 		mob.setTarget(player)
+=======
+	for i in range(20):
+		mob = MH.spawnMonster("Cave")
+		mob.spawn(local_map)
+>>>>>>> origin/master
 		local_map_objects.append(mob)
 	
 	#Sets player to the location given from the starting point
@@ -50,8 +56,17 @@ def main():
 	FOV_LIGHT_WALLS = True
 	TORCH_RADIUS = 10
 	
+<<<<<<< HEAD
 	#GUI	
 	gui = GUIHandler(player)
+=======
+	#GUI
+	length = 81
+	height = 7
+	gui_panel = MessageHandler(player, 0, 44, length, height)
+	gui_panel.message("Welcome to Eoraldil!", libtcod.yellow)
+	gui_panel.message("Your journey beings... in a cave", libtcod.grey)
+>>>>>>> origin/master
 	
 	fov_map = libtcod.map_new(local_map.width, local_map.height)
 	for y in range(local_map.height):
@@ -82,11 +97,15 @@ def main():
 		if exit:
 			break
 		
+<<<<<<< HEAD
 		for object in local_map_objects:
 			if isinstance(object, Monster):
 				object.takeAction(local_map, local_map_objects)
 		
 		render(con, local_map_objects, player, gui_panels)
+=======
+		render(con, local_map_objects, player, gui_panel)
+>>>>>>> origin/master
 		
 		#messagePanel.update()
 		
@@ -98,10 +117,17 @@ def main():
 
 
 
+<<<<<<< HEAD
 def render(con, objects, player, gui_panels):	
 	camera = player.camera
 	camera.update(con, objects)
 	gui.update()
+=======
+def render(con, objects, player, panel):	
+	camera = player.camera
+	camera.update(con, objects)
+	panel.update()
+>>>>>>> origin/master
 
 
 def handle_keys(player, Map, objects):
