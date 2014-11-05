@@ -11,28 +11,26 @@ class BasicMonster:
     def __init__(self, owner):
         self.owner = owner
 
-    def takeAction(self, Map, MapO):
+    def takeAction(self, fov_map):
         monster = self.owner
-        target = monster.target
-        distance = self.distance_to(target)
-        if distance >= 20:
-            return       
-        if distance >= 2:
-            self.move_to_target(target.x, target.y, Map, MapO)
+        if(libtcod.map_is_in_fov(fov_map, monster.x, monster.y)):
+            if monster.distance_to(self.target) >= 2:
+                monster.move_to_target(self.target.x, self.target.y)
+            #elif player.
 
-    def move_to_target(self, x, y, Map, MapO):
-        owner = self.owner
-        
-        dx = x - owner.x
-        dy = y - owner.y
+    def move_to_target(self, x, y):
+        dx = x - self.x
+        dy = y - self.y
         distance = math.sqrt(dx ** 2 + dy ** 2)
 
         dx = int(round(dx / distance))
         dy = int(round(dy / distance))
-        owner.move(dx, dy, Map, MapO)
+        self.move(dx, dy)
 
     def distance_to(self, other):
-        owner = self.owner
-        dx = other.x - owner.x
-        dy = other.y - owner.y
+        dx = other.x - self.x
+        dy = other.y - self.y
         return math.sqrt(dx ** 2 + dy ** 2)
+
+    def setTarget(self, target):
+        self.target = target
