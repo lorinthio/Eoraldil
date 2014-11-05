@@ -86,11 +86,24 @@ class InventoryPanel(MessagePanel):
 	self.message("==========")
 	self.message("INVENTORY")
 	self.message("==========")
+	for item in player.inventory:
+	    self.message(item)
+	    
+class EquipmentPanel(MessagePanel):
+    
+    def __init__(self, player, posX, posY, length, height, rows=39):
+	MessagePanel.__init__(self, player, posX, posY, length, height, rows)
+	self.refresh()
+	
+    def refresh(self):
+	player = self.player
+	self.message("==========")
+	self.message("EQUIPMENT")
+	self.message("==========")
 	if player.mainHand == None:
 	    self.message("Main : None")
 	else:
 	    self.message("Main : " + str(player.mainHand.name))
-	    
 
 class CharacterPanel(MessagePanel):
     
@@ -134,6 +147,8 @@ class VitalPanel:
 	panel = self.panel
 	#render a bar (HP, experience, etc). first calculate the width of the bar
 	bar_width = int(float(value) / maximum * total_width)
+	if bar_width > total_width:
+	    bar_width = total_width
      
 	#render the background first
 	libtcod.console_set_default_background(panel, back_color)
@@ -151,16 +166,23 @@ class VitalPanel:
     
     def update(self):
 	panel = self.panel
-	
-	#show the player's stats
 	player = self.player
-	self.render_bar(1, 1, 25, 'EXP', player.curClass.exp, player.curClass.tnl,
-	    libtcod.grey, libtcod.dark_grey)
-	self.render_bar(1, 3, 25, 'HP', player.curClass.hp, player.curClass.maxHp,
+	Class = player.curClass
+	
+	libtcod.console_set_default_background(panel, libtcod.black)
+	libtcod.console_clear(panel)
+	
+	lightblue = libtcod.Color(51, 153, 255)
+	darkblue = libtcod.Color(74, 152, 217)	
+	#show the player's stats
+	
+	self.render_bar(1, 1, 25, 'EXP', Class.exp, Class.tnl,
+	    libtcod.yellow, libtcod.dark_grey)
+	self.render_bar(1, 3, 25, 'HP', Class.hp, Class.maxHp,
 	    libtcod.red, libtcod.darker_red)
-	self.render_bar(1, 5, 25, 'MP', player.curClass.mp, player.curClass.maxMp,
-	    libtcod.blue, libtcod.darker_blue)
-	self.render_bar(1, 7, 25, 'STA', player.curClass.stamina, player.curClass.maxStamina,
+	self.render_bar(1, 5, 25, 'MP', Class.mp, Class.maxMp,
+	    lightblue, darkblue)
+	self.render_bar(1, 7, 25, 'STA', Class.stamina, Class.maxStamina,
 	    libtcod.orange, libtcod.darker_orange)
 
 	#blit the contents of "panel" to the root console

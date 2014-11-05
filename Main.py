@@ -24,9 +24,9 @@ def main():
 	con = libtcod.console_new(SCREEN_W, SCREEN_H)	
 	
 	#Default Character fill in
-	player = Player("Phrixious")
+	player = Player("Lorinthio")
 	player.createPlayer()
-	player.equipClass("Rogue")
+	player.equipClass("Warrior")
 		
 	#Generates the map
 	local_map = Map("smalldungeon")
@@ -92,15 +92,15 @@ def main():
 				#object.takeAction(local_map, local_map_objects)
 		
 		render(con, local_map_objects, player, gui)
-
 		
-		#messagePanel.update()
+		player.curClass.exp += 10
 		
 		libtcod.console_blit(con, 0, 0, camera.width, camera.height, 0, 0, 0)
 		libtcod.console_flush()		
 		
 		for object in local_map_objects:
 			object.clear(con, camera.x, camera.y)
+			
 
 def render(con, objects, player, gui):	
 	camera = player.camera

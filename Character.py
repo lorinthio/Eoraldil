@@ -16,6 +16,8 @@ class Player(EntityObject):
 		EntityObject.__init__(self, 1, 1, name[0], libtcod.black, solid=True)
 		
 		#Equipment
+		self.inventory = ["Healing Potion", "Torch", "Pickaxe"]
+		
 		self.mainHand = None
 		self.offHand = None
 		
