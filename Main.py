@@ -28,8 +28,13 @@ def main():
 	player.createPlayer()
 	player.equipClass("Warrior")
 		
+	#GUI	
+	gui = GUIHandler(player)
+	gui.update
+	libtcod.console_flush()		
+		
 	#Generates the map
-	local_map = Map("smalldungeon")
+	local_map = Map(gui, "forest")
 	(startx, starty) = local_map.starting_point
 	
 	#Starts mobHandler and spawns a mob at a random spot
@@ -51,8 +56,7 @@ def main():
 	FOV_LIGHT_WALLS = True
 	TORCH_RADIUS = local_map.fov_range
 	
-	#GUI	
-	gui = GUIHandler(player)
+
 	
 	fov_map = libtcod.map_new(local_map.width, local_map.height)
 	for y in range(local_map.height):
@@ -92,8 +96,6 @@ def main():
 				#object.takeAction(local_map, local_map_objects)
 		
 		render(con, local_map_objects, player, gui)
-		
-		player.curClass.exp += 10
 		
 		libtcod.console_blit(con, 0, 0, camera.width, camera.height, 0, 0, 0)
 		libtcod.console_flush()		
@@ -142,7 +144,7 @@ def handle_keys(player, local_Map, objects, gui):
 		    
 		#Misc
 		elif key.c == ord("n"):
-			(local_Map, fov_Map) = newMap(player)
+			(local_Map, fov_Map) = newMap(player, gui)
 			fov_recompute = True
 			mapChange = True			
 	
@@ -161,8 +163,8 @@ def handle_keys(player, local_Map, objects, gui):
 	else:
 		return(False, fov_recompute, local_Map, fov_Map)
 
-def newMap(player):
-	local_Map = Map()
+def newMap(player, gui):
+	local_Map = Map(gui)
 	(player.x, player.y) = local_Map.starting_point
 	player.camera.Map = local_Map
 	player.camera.move_camera()
@@ -219,13 +221,5 @@ def chooseClass():
 		player = chooseClass() # If it fails it will repeat this code until a suitable answer is given
 	
 	return player
-
-
-#Simply checks if an object is a type for example if item is a Weapon (Gonna move to a tools module)
-def isType(obj, name):
-	if name == type(obj).__name__:
-		return True
-	else:
-		return False
 	
 main()

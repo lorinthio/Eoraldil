@@ -89,4 +89,9 @@ class PlayerCamera:
 			visible = libtcod.map_is_in_fov(self.fov_map, object.x, object.y)
 			if visible:
 				if camera.x <= object.x <= (camera.x + camera.width) and camera.y <= object.y <= (camera.y + camera.height):
-					object.draw(con, camera.x, camera.y)
+					tile = self.Map.mappedArea[object.x][object.y]
+					if tile.tileType == "leaves":
+						pass
+					else:
+						object.draw(con, camera.x, camera.y)
+					

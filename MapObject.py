@@ -13,7 +13,9 @@ from Monster import *
 
 class Map:
 
-    def __init__(self, mapType=""):
+    def __init__(self, gui, mapType=""):
+        self.gui = gui
+        self.messenger = gui.messenger        
         self.mapType = mapType
         self.rooms = []
         self.entities = []
@@ -244,7 +246,9 @@ class Map:
             tile.color = self.floor_color
 
     def generate_forest(self):
-        print("generating forest...")
+        self.messenger.message("Generating Forest", libtcod.yellow)
+        self.gui.update()
+        libtcod.console_flush()	
         self.width = randint(100, 300)
         self.height = randint(60, 180)
         
@@ -255,14 +259,17 @@ class Map:
         
         self.setupCellular()
         for i in range(6):
-            print(str(i * 15) + "%")
+            self.messenger.message(str(i * 15) + "%")
+            self.gui.update()
+            libtcod.console_flush()	
             self.automate()
         self.generateWater()
         self.colorMap()
         self.randomStartPoint()
         self.place_trees()
-        print("100%")
-        print("Map finished generating!")
+        self.messenger.message("Map finished generating!", libtcod.yellow)
+        self.gui.update()        
+        libtcod.console_flush()	
 
     def place_trees(self):
         if self.mapType == "forest":
@@ -300,7 +307,9 @@ class Map:
 
     # cave generation code!
     def generate_cave(self):
-        print("generating cave...")
+        self.messenger.message("Generating Forest", libtcod.yellow)
+        self.gui.update()
+        libtcod.console_flush()	
         self.width = randint(120, 200)
         self.height = randint(40, 100)
         
@@ -311,14 +320,19 @@ class Map:
 
         self.setupCellular()
         for i in range(4):
-            print(str(i * 20) + "%")
+            self.messenger.message(str(i * 20) + "%")
+            self.gui.update()
+            libtcod.console_flush()	
             self.automate()
         self.generateWater()
-        print("75%")
+        self.messenger.message("75%")
+        self.gui.update()
+        libtcod.console_flush()	
         self.colorMap()
         self.randomStartPoint()
-        print("100%")
-        print("Map finished generating!")
+        self.messenger.message("Map finished generating", libtcod.yellow)
+        self.gui.update()
+        libtcod.console_flush()	
 
     def colorMap(self):
         for x in range(self.width):
@@ -422,9 +436,6 @@ class Map:
         mapped = self.mappedArea
         
         water_color = libtcod.sky
-        water_color1 = water_color - libtcod.Color(6, 6, 6)
-        water_color2 = water_color1 - libtcod.Color(6, 6, 6)
-        water_color3 = water_color2 - libtcod.Color(8, 8, 8)
 
         noise = libtcod.noise_new(2, noise_hurst, noise_lacunarity)
         for y in range(self.height):
@@ -438,15 +449,8 @@ class Map:
                         tile.block_sight = False
                         tile.slows = True
                         #Depth = Color darkness
-                        depth = 10 - (noisefloat * 100)
-                        if depth <= 5:
-                            tile.color = water_color
-                        elif 5 < depth <= 7:
-                            tile.color = water_color1
-                        elif 7 < depth < 9:
-                            tile.color = water_color2
-                        else:
-                            tile.color = water_color3
+                        depth = int(10 - (noisefloat * 100))
+                        tile.color = water_color - libtcod.Color(5 * depth, 5 * depth, 5 * depth)
 
         #Block the edges of the map so player can't crash the game
         for y in range(self.height):

@@ -9,7 +9,7 @@ class GUIHandler:
 	gui_message = MessagePanel(player, 40, 41, 40, 10)
 	gui_message.message("Welcome to Eoraldil!", libtcod.yellow)
 	gui_message.message("Your journey begins... in a cave. A dark, and lonely cave", libtcod.grey)
-	self.gui_panels.append(gui_message)
+	self.messenger = gui_message
 	
 	#Inventory Panel
 	inventory = InventoryPanel(player, 62, 0, 19, 39)
@@ -29,6 +29,7 @@ class GUIHandler:
 	for panel in self.gui_panels:
 	    panel.update()
 	self.activeSide.update()
+	self.messenger.update()
 
 class MessagePanel:
     
