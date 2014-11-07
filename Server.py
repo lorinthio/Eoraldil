@@ -31,6 +31,10 @@ class ClientChannel(Channel):
 		self.nickname = data['nickname']
 		self._server.SendPlayers()
 		
+	def Network_position(self, data):
+		data = {"action": "position", "position": data['position'], "who": self.nickname}
+		self._server.SendToAllButPlayer(data, self)
+		
 
 class ChatServer(Server):
 	channelClass = ClientChannel
@@ -82,8 +86,13 @@ class ChatServer(Server):
 	def SendToAll(self, data):
 		[p.Send(data) for p in self.players]
 	
+	def SendToAllButPlayer(self, data, player):
+		for p in self.players:
+			if p is not player:
+				p.Send(data)
+	
 	def genMap(self):
-		self.Map = Map(None, "smalldungeon")
+		self.Map = Map(None)
 		print self.Map.width, self.Map.height
 	
 	def Launch(self):

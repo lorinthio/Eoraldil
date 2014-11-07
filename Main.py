@@ -26,14 +26,15 @@ def main():
 	con = libtcod.console_new(SCREEN_W, SCREEN_H)	
 	
 	#Default Character fill in
-	player = Player("Lorinthio")
+	player = Player("Lorinth")
+	#player = Player("Phrixious")
 	player.createPlayer()
 	player.equipClass("Warrior")
 		
 	#CLIENT
 	host = "localhost"
 	port = "12345"
-	c = Client(host, int(port))	
+	c = Client(host, int(port), player)	
 		
 	#GUI	
 	gui = GUIHandler(player)
@@ -50,7 +51,11 @@ def main():
 	player.x = startx
 	player.y = starty	
 	
-	local_map_objects = [player]
+	local_players = [player]
+	
+	local_map_objects = []
+	
+	print local_map_objects
 	
 	#FOV
 	FOV_ALGO = 0
@@ -92,16 +97,38 @@ def main():
 			#recompute FOV if needed (the player moved or something)
 			fov_recompute = False
 			libtcod.map_compute_fov(fov_map, player.x, player.y, local_map.fov_range, FOV_LIGHT_WALLS, FOV_ALGO)	
+			
+			c.send_loc = True
 		
 		c.Loop()
+
+		#Check for moved players
+		for name in c.moved_players:
+			print(name)
+			found = False
+			for local_play in local_players:
+				if local_play.name == name:
+					found = True
+					pos = c.moved_players[name]
+					local_play.put(pos[0], pos[1])
+			if not found:
+				newplayer = Player(name)
+				pos = c.moved_players[name]
+				newplayer.put(pos[0], pos[1])
+				local_players.append(newplayer)
+		c.moved_players = {}
+				
+		#Check if server changed the map, or player changed zones
 		if c.mapChange:
 			c.mapChange = False
 			(local_map, fov_Map) =  makeMapFromServer(player, gui, local_map, c)
 			fov_recompute = True
 			fov_map = fov_Map
 	
+		objects = local_map_objects + local_players
 		if not fov_recompute:
-			(exit, fov_recompute, changeMap, fov_Map) = handle_keys(player, local_map, local_map_objects, gui)
+			
+			(exit, fov_recompute, changeMap, fov_Map) = handle_keys(player, local_map, objects, gui)
 			
 			if changeMap is not None:
 				local_map = changeMap
@@ -114,18 +141,18 @@ def main():
 			#if isinstance(object, Monster):
 				#object.takeAction(local_map, local_map_objects)
 		
-		render(con, local_map_objects, player, gui)
+		render(con, local_map_objects + local_players, player, gui)
 		
 		libtcod.console_blit(con, 0, 0, camera.width, camera.height, 0, 0, 0)
 		libtcod.console_flush()		
 		
-		for object in local_map_objects:
+		for object in objects:
 			object.clear(con, camera.x, camera.y)
 		
 	
 			
 
-def render(con, objects, player, gui):	
+def render(con, objects, player, gui):
 	camera = player.camera
 	camera.update(con, objects)
 	gui.update()

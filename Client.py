@@ -11,13 +11,24 @@ from thread import *
 from sys import *
 
 class Client(ConnectionListener):
-	def __init__(self, host, port):
+	def __init__(self, host, port, player):
 		self.mapChange = False
 		self.Connect((host, port))
 		print "Client started"
 		self.chunks = []
+		self.player = player
+		self.moved_players = {}
+		self.send_loc = False
+		connection.Send({"action": "nickname", "nickname": player.name})
+		
+	def sendLocation(self):
+		player = self.player
+		connection.Send({"action": "position", "position": (player.x, player.y)})
 	
 	def Loop(self):
+		if self.send_loc:
+			self.sendLocation()
+			self.send_loc = False
 		connection.Pump()
 		self.Pump()
 	
@@ -48,6 +59,9 @@ class Client(ConnectionListener):
 		
 	def Network_mapDone(self, data):
 		self.mapDone = True
+		
+	def Network_position(self, data):
+		self.moved_players[data['who']] = data['position']
 	
 	# built in stuff
 
