@@ -31,6 +31,14 @@ class GUIHandler:
 	self.activeSide.update()
 	self.messenger.update()
 
+#class EntryBar(MessagePanel):
+    
+    #def __init__(self, gui, player, posx, posy, length, height=1, rows=1):
+	#self.owner = gui
+	#MessagePanel.__init__(self, player, posx, posy, length, height, rows)
+	#self.msg = ""
+	
+
 class MessagePanel:
     
     def __init__(self, player, posX, posY, length, height, rows=7):

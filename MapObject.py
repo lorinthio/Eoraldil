@@ -13,13 +13,17 @@ from Monster import *
 
 class Map:
 
-    def __init__(self, gui, mapType=""):
+    def __init__(self, gui=None, mapType="", mappedArea=None):
         self.gui = gui
-        self.messenger = gui.messenger        
+        if gui is not None:
+            self.messenger = gui.messenger        
         self.mapType = mapType
         self.rooms = []
         self.entities = []
-        self.generate_map()
+        if mappedArea == None:
+            self.generate_map()
+        else:
+            self.mappedArea = mappedArea
         self.fov_range = self.fovFind()
         
     def fovFind(self):
@@ -186,7 +190,6 @@ class Map:
 
                 if num_rooms == 0:
                     self.starting_point = newroom.center()
-                    print self.starting_point
 
                 (new_x, new_y) = newroom.center()
 
@@ -246,8 +249,9 @@ class Map:
             tile.color = self.floor_color
 
     def generate_forest(self):
-        self.messenger.message("Generating Forest", libtcod.yellow)
-        self.gui.update()
+        if self.gui is not None:
+            self.messenger.message("Generating Forest", libtcod.yellow)
+            self.gui.update()
         libtcod.console_flush()	
         self.width = randint(100, 300)
         self.height = randint(60, 180)
@@ -259,17 +263,19 @@ class Map:
         
         self.setupCellular()
         for i in range(6):
-            self.messenger.message(str(i * 15) + "%")
-            self.gui.update()
-            libtcod.console_flush()	
+            if self.gui is not None:
+                self.messenger.message(str(i * 15) + "%")
+                self.gui.update()
+                libtcod.console_flush()	
             self.automate()
         self.generateWater()
         self.colorMap()
         self.randomStartPoint()
         self.place_trees()
-        self.messenger.message("Map finished generating!", libtcod.yellow)
-        self.gui.update()        
-        libtcod.console_flush()	
+        if self.gui is not None:
+            self.messenger.message("Map finished generating!", libtcod.yellow)
+            self.gui.update()        
+            libtcod.console_flush()	
 
     def place_trees(self):
         if self.mapType == "forest":
@@ -307,9 +313,10 @@ class Map:
 
     # cave generation code!
     def generate_cave(self):
-        self.messenger.message("Generating Forest", libtcod.yellow)
-        self.gui.update()
-        libtcod.console_flush()	
+        if self.gui is not None:
+            self.messenger.message("Generating Forest", libtcod.yellow)
+            self.gui.update()
+            libtcod.console_flush()	
         self.width = randint(120, 200)
         self.height = randint(40, 100)
         
@@ -320,19 +327,22 @@ class Map:
 
         self.setupCellular()
         for i in range(4):
-            self.messenger.message(str(i * 20) + "%")
-            self.gui.update()
-            libtcod.console_flush()	
+            if self.gui is not None:
+                self.messenger.message(str(i * 20) + "%")
+                self.gui.update()
+                libtcod.console_flush()	
             self.automate()
         self.generateWater()
-        self.messenger.message("75%")
-        self.gui.update()
-        libtcod.console_flush()	
+        if self.gui is not None:
+            self.messenger.message("75%")
+            self.gui.update()
+            libtcod.console_flush()	
         self.colorMap()
         self.randomStartPoint()
-        self.messenger.message("Map finished generating", libtcod.yellow)
-        self.gui.update()
-        libtcod.console_flush()	
+        if self.gui is not None:
+            self.messenger.message("Map finished generating", libtcod.yellow)
+            self.gui.update()
+            libtcod.console_flush()	
 
     def colorMap(self):
         for x in range(self.width):
@@ -466,6 +476,7 @@ class Tile:
     #a tile of the map and its properties
     def __init__(self, blocked, block_sight=None, tileType=None, color=None):
         self.blocked = blocked
+        self.block_sight = block_sight
         self.explored = False
         self.slows = False
         self.tileType = tileType

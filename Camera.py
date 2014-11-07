@@ -84,7 +84,7 @@ class PlayerCamera:
 					libtcod.console_set_char_background(con, x, y, libtcod.grey, libtcod.BKGND_SET )
 				if x == 0 or x ==camera.width - 1:
 					libtcod.console_set_char_background(con, x, y, libtcod.grey, libtcod.BKGND_SET )				
-					
+		
 		for object in objects:
 			visible = libtcod.map_is_in_fov(self.fov_map, object.x, object.y)
 			if visible:

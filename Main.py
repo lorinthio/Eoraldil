@@ -6,10 +6,12 @@ from MapObject import *
 from Camera import *
 from GUI import *
 import sys
+from Client import *
 import libtcodpy as libtcod
 
 
 def main():
+	setrecursionlimit(3500)
 	#Window
 	SCREEN_W = 81
 	SCREEN_H = 51
@@ -28,35 +30,32 @@ def main():
 	player.createPlayer()
 	player.equipClass("Warrior")
 		
+	#CLIENT
+	host = "localhost"
+	port = "12345"
+	c = Client(host, int(port))	
+		
 	#GUI	
 	gui = GUIHandler(player)
 	gui.update
 	libtcod.console_flush()		
 		
+
+		
 	#Generates the map
-	local_map = Map(gui, "forest")
+	local_map = Map(gui, "smalldungeon")
 	(startx, starty) = local_map.starting_point
-	
-	#Starts mobHandler and spawns a mob at a random spot
-	local_map_objects = [player]
-	
-	MH = MonsterHandler()
-	for i in range(50):
-		mob = MH.spawnMonster("Cave")
-		mob.spawn(local_map)
-		#mob.setTarget(player)
-		local_map_objects.append(mob)
 	
 	#Sets player to the location given from the starting point
 	player.x = startx
-	player.y = starty
+	player.y = starty	
+	
+	local_map_objects = [player]
 	
 	#FOV
 	FOV_ALGO = 0
 	FOV_LIGHT_WALLS = True
-	TORCH_RADIUS = local_map.fov_range
-	
-
+	TORCH_RADIUS = 12
 	
 	fov_map = libtcod.map_new(local_map.width, local_map.height)
 	for y in range(local_map.height):
@@ -65,7 +64,18 @@ def main():
 	
 	camera = PlayerCamera(player, local_map, fov_map)
 	player.camera = camera
-	camera.move_camera()
+	camera.move_camera()	
+	
+	#MH = MonsterHandler()
+	#for i in range(50):
+		#mob = MH.spawnMonster("Cave")
+		#mob.spawn(local_map)
+		##mob.setTarget(player)
+		#local_map_objects.append(mob)
+	
+
+	
+
 	
 	#Holds current area objects (while be iteratted based on local chunks and objects those chunks hold)
 	
@@ -81,16 +91,25 @@ def main():
 		if fov_recompute:
 			#recompute FOV if needed (the player moved or something)
 			fov_recompute = False
-			libtcod.map_compute_fov(fov_map, player.x, player.y, local_map.fov_range, FOV_LIGHT_WALLS, FOV_ALGO)		
+			libtcod.map_compute_fov(fov_map, player.x, player.y, local_map.fov_range, FOV_LIGHT_WALLS, FOV_ALGO)	
 		
-		(exit, fov_recompute, changeMap, fov_Map) = handle_keys(player, local_map, local_map_objects, gui)
-		if changeMap is not None:
-			local_map = changeMap
+		c.Loop()
+		if c.mapChange:
+			c.mapChange = False
+			(local_map, fov_Map) =  makeMapFromServer(player, gui, local_map, c)
+			fov_recompute = True
 			fov_map = fov_Map
-		if exit:
-			break
+	
+		if not fov_recompute:
+			(exit, fov_recompute, changeMap, fov_Map) = handle_keys(player, local_map, local_map_objects, gui)
+			
+			if changeMap is not None:
+				local_map = changeMap
+				fov_map = fov_Map
+				
+			if exit:
+				break				
 		
-
 		#for object in local_map_objects:
 			#if isinstance(object, Monster):
 				#object.takeAction(local_map, local_map_objects)
@@ -102,6 +121,8 @@ def main():
 		
 		for object in local_map_objects:
 			object.clear(con, camera.x, camera.y)
+		
+	
 			
 
 def render(con, objects, player, gui):	
@@ -148,23 +169,24 @@ def handle_keys(player, local_Map, objects, gui):
 			fov_recompute = True
 			mapChange = True			
 	
-	if not mapChange:
-		if fov_recompute:
-			player.move(x, y, local_Map, objects)
 	if key.vk == libtcod.KEY_ENTER and key.lalt:
 	    #Alt+Enter: toggle fullscreen
 	    libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
      
 	elif key.vk == libtcod.KEY_ESCAPE:
-	    return (True, fov_recompute, None, None)  #exit game
+	    return (True, fov_recompute, None, None)  #exit game	
 	
-	if not mapChange:	
+	if not mapChange:
+		if fov_recompute:
+			player.move(x, y, local_Map, objects)		
 		return(False, fov_recompute, None, None)
 	else:
 		return(False, fov_recompute, local_Map, fov_Map)
 
-def newMap(player, gui):
-	local_Map = Map(gui)
+def newMap(player, gui, local_Map=None):
+	if local_Map == None:
+		local_Map = Map(gui)
+		
 	(player.x, player.y) = local_Map.starting_point
 	player.camera.Map = local_Map
 	player.camera.move_camera()
@@ -179,6 +201,51 @@ def newMap(player, gui):
 	player.camera.move_camera()
 	
 	return (local_Map, fov_Map)
+
+def makeMapFromServer(player, gui, local_map, c):
+	data = c.mapData
+	startpoint = data['startingPoint']
+	width = data['width']
+	height = data['height']
+	fov_range = data['fovRange']
+	maptype = data['mapType']
+
+	mapped = [[Tile(False)
+            for y in range(height)]
+                for x in range(width)]
+	
+	while not c.mapDone:
+		c.Loop()
+	
+	for x in range(width):
+		chunk = c.chunks[x]
+		for y in range(height):
+			tileinfo = chunk[str(y)]
+			mapped[x][y] = Tile(tileinfo[0], tileinfo[1], tileinfo[2], libtcod.Color(tileinfo[3][0], tileinfo[3][1], tileinfo[3][2]))
+	
+	newmap = local_map
+	newmap.mappedArea = mapped
+	newmap.width = width
+	newmap.height = height
+	newmap.fov_range = fov_range
+	newmap.starting_point = startpoint
+		
+	(player.x, player.y) = newmap.starting_point
+	
+	fov_Map = libtcod.map_new(newmap.width, newmap.height)
+	
+	for y in range(newmap.height):
+	    for x in range(newmap.width):
+		libtcod.map_set_properties(fov_Map, x, y, not newmap.mappedArea[x][y].block_sight, not newmap.mappedArea[x][y].blocked)		    
+	
+	libtcod.map_compute_fov(fov_Map, player.x, player.y, newmap.fov_range, True, 0)
+	
+	player.camera.Map = newmap
+	player.camera.fov_map = fov_Map
+	player.camera.move_camera()
+	
+	return (newmap, fov_Map)	
+	
 
 def dropItem(x, y, objects):
 	#Currently creates the ItemHandler, but later this will be in the server file
