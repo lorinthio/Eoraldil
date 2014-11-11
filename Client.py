@@ -1,6 +1,7 @@
 import sys
 from time import sleep
 from sys import stdin, exit
+from GUI import *
 
 from PodSixNet.Connection import connection, ConnectionListener
 
@@ -11,15 +12,19 @@ from thread import *
 from sys import *
 
 class Client(ConnectionListener):
-	def __init__(self, host, port, player):
+	def __init__(self, host, port, player, gui):
 		self.mapChange = False
 		self.Connect((host, port))
 		print "Client started"
 		self.chunks = []
+		self.gui = gui
 		self.player = player
 		self.moved_players = {}
+		self.removed_players = []
+		self.spawnedMobs = []
 		self.send_loc = False
 		connection.Send({"action": "nickname", "nickname": player.name})
+		t = start_new_thread(self.InputLoop, ())
 		
 	def sendLocation(self):
 		player = self.player
@@ -46,7 +51,11 @@ class Client(ConnectionListener):
 		print "*** players: " + ", ".join([p for p in data['players']])
 	
 	def Network_message(self, data):
-		print data['who'] + ": " + data['message']
+		self.gui.message(data['who'] + ": " + data['message'])
+		#print(data['who'] + ": " + data['message'])
+	
+	def Network_playerDisconnect(self, data):
+		self.removed_players.append(data['who'])
 	
 	def Network_map(self, data):
 		self.mapChange = True
@@ -59,6 +68,12 @@ class Client(ConnectionListener):
 		
 	def Network_mapDone(self, data):
 		self.mapDone = True
+
+        def Network_mobSpawn(self, data):
+                self.spawnedMobs.append(data)
+
+        def Network_mobMove(self, data):
+                pass
 		
 	def Network_position(self, data):
 		self.moved_players[data['who']] = data['position']
@@ -74,13 +89,5 @@ class Client(ConnectionListener):
 		connection.Close()
 	
 	def Network_disconnected(self, data):
-		print 'Server disconnected'
+		print data
 		exit()
-
-def main():
-	host = "localhost"
-	port = "12345"
-	c = Client(host, int(port))
-	while 1:
-		c.Loop()
-		sleep(0.001)

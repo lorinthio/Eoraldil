@@ -3,9 +3,40 @@ from sys import path as syspath
 syspath.append('.//libtcod-1.5.1')
 import libtcodpy as libtcod
 
+class UseableObject():
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def use(self):
+        print("Tried to use ", self, " but no code written")
+
+class Door(UseableObject):
+
+    def __init__(self, x, y, needkey=False):
+        UseableObject.__init__(self, x, y)
+        self.char = 'D'
+        self.name = 'Door'
+        self.solid = True
+        self.color = libtcod.white
+        self.needkey = needkey
+        self.closed = True
+
+    def use(self):
+        if not needkey:
+            if self.closed:
+                self.char = 'd'
+                self.solid = False
+                self.closed = False
+            else:
+                self.char = 'D'
+                self.solid = True
+                self.closed = True
+            
+
 class EntityObject():
 
-    def __init__(self, x, y, char, color, solid=False, localMap=None):
+    def __init__(self, x, y, char="", color=libtcod.green, solid=False, localMap=None):
         self.localMap = localMap
         self.x = x
         self.y = y

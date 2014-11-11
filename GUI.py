@@ -5,31 +5,46 @@ class GUIHandler:
     def __init__(self, player):
 	self.gui_panels = []
 	
+	self.player = player
+	
 	#Message Panels
 	gui_message = MessagePanel(player, 40, 41, 40, 10)
 	gui_message.message("Welcome to Eoraldil!", libtcod.yellow)
-	gui_message.message("Your journey begins... in a cave. A dark, and lonely cave", libtcod.grey)
+	gui_message.message("Your journey begins... ", libtcod.grey)
 	self.messenger = gui_message
 	
 	#Inventory Panel
 	inventory = InventoryPanel(player, 62, 0, 19, 39)
 	self.inventory = inventory
 	
+	equipment = EquipmentPanel(player, 62, 0, 19, 39)
+	self.equipment = equipment
+	
 	#Character Panel
 	character = CharacterPanel(player, 62, 0, 19, 39)
 	self.activeSide = character
 	self.character = character
 	
-	        
 	#Vital Panels
-	gui_vitals = VitalPanel(player, 0, 41, 40, 10)
+	gui_vitals = VitalPanel(player, 0, 41, 30, 9)
 	self.gui_panels.append(gui_vitals)	
 	
-    def update(self):
+	#Mouse Panel
+	gui_mouse = MousePanel(player, 10, 50, 40, 2)
+	self.MousePanel = gui_mouse
+	
+    def message(self, message, color=libtcod.white):
+	self.messenger.message(message, color)
+	
+    
+    def update(self, objects=None, mouse=None):
 	for panel in self.gui_panels:
 	    panel.update()
 	self.activeSide.update()
 	self.messenger.update()
+	if objects != None:
+	    self.MousePanel.refresh(objects, mouse)
+	self.MousePanel.update()
 
 #class EntryBar(MessagePanel):
     
@@ -84,6 +99,40 @@ class MessagePanel:
 	#blit the contents of "panel" to the root console
 	libtcod.console_blit(panel, 0, 0, self.length, self.height, 0, self.posX, self.posY)  	
 
+class MousePanel(MessagePanel):
+    
+    def __init__(self, player, posX, posY, length, height, rows=2):
+	MessagePanel.__init__(self, player, posX, posY, length, height, rows)
+	self.player = player
+	self.lastline = ""
+	
+    def refresh(self, objects, mouse):
+	if mouse == None:
+	    return
+	self.get_names_under_mouse(objects, mouse)
+	
+    def get_names_under_mouse(self, objects, mouse):
+	m = mouse
+	c = self.player.camera
+	
+	(x, y) = (m.cx + c.x, m.cy + c.y)
+	
+	#create a list with the names of all objects at the mouse's coordinates and in FOV
+	names = [obj.name for obj in objects
+            if obj.x == x and obj.y == y and libtcod.map_is_in_fov(c.fov_map, obj.x, obj.y)]
+	line = ''
+	for name in names:
+	    line += name + ", "
+	line = line[0: len(line)-2].strip()
+	
+	if self.lastline == line:
+	   return
+	
+	self.lastline = line
+	self.message(line, libtcod.yellow)
+	
+	
+
 class InventoryPanel(MessagePanel):
     
     def __init__(self, player, posX, posY, length, height, rows=39):
@@ -109,10 +158,52 @@ class EquipmentPanel(MessagePanel):
 	self.message("==========")
 	self.message("EQUIPMENT")
 	self.message("==========")
+	#Weapons
 	if player.mainHand == None:
-	    self.message("Main : None")
+	    self.message("Main : ")
 	else:
 	    self.message("Main : " + str(player.mainHand.name))
+	if player.offHand == None:
+	    self.message("Offhand: ")
+	else:
+	    self.message("Offhand : " + str(player.offHand.name))
+	self.message("")
+	#Armor
+	if player.helmet == None:
+	    self.message("Helmet : ")
+	else:
+	    self.message("Helmet : " + str(player.helmet.name))	    
+	if player.chest == None:
+	    self.message("Chest : ")
+	else:
+	    self.message("Chest : " + str(player.chest.name))
+	if player.gloves == None:
+	    self.message("Gloves : ")
+	else:
+	    self.message("Gloves : " + str(player.gloves.name))
+	if player.legs == None:
+	    self.message("Legs : ")
+	else:
+	    self.message("Legs : " + str(player.legs.name))
+	if player.boots == None:
+	    self.message("Boots : ")
+	else:
+	    self.message("Boots : " + str(player.boots.name))
+	self.message("")
+	#Accessories
+	if player.necklace == None:
+	    self.message("Necklace : ")
+	else:
+	    self.message("Necklace : " + str(player.boots.name))	
+	    # Accessories
+	if player.boots == None:
+	    self.message("L_Ring : ")
+	else:
+	    self.message("L_Ring : " + str(player.ring1.name))
+	if player.boots == None:
+	    self.message("R_Ring : ")
+	else:
+	    self.message("R_Ring : " + str(player.ring2.name))
 
 class CharacterPanel(MessagePanel):
     
@@ -125,7 +216,7 @@ class CharacterPanel(MessagePanel):
 	player = self.player
 	Class = player.curClass
 	self.message("==========")
-	self.message("CHARACTER")
+	self.message("PLAYER")
 	self.message("==========")
 	self.message("Name : " + str(player.name))
 	self.message("Class : " + str(Class.name))

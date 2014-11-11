@@ -11,6 +11,38 @@ from Monster import *
 # - small dungeon = low number of small rooms
 # - cave = cave like area with rivers
 
+class Region:
+    
+    def __init__(self, MH):
+        print "Generating Map..."
+        self.Map = Map(None)
+        print "Generated", self.Map.mapType, "Map."
+        
+        #For future spawning
+        self.MH = MH
+        
+        #For initial map fill
+        self.entityCount = 0
+        self.mobs = self.spawnCreatures(MH)
+        self.players = []
+        self.objects = self.mobs + self.players
+        
+    def addPlayer(self, player):
+        self.players.append(player)
+        
+    def removePlayer(self, player):
+        self.players.remove(player)
+        
+    def spawnCreatures(self, MH):
+        mobs = []
+        for i in range(30):
+            mob = MH.spawnMonster(self.Map)
+            mob.ID = self.entityCount
+            mobs.append(mob)
+            self.entityCount += 1
+        return mobs       
+        
+
 class Map:
 
     def __init__(self, gui=None, mapType="", mappedArea=None):
@@ -28,13 +60,15 @@ class Map:
         
     def fovFind(self):
         if self.mapType == "smalldungeon":
-            return 12
-        elif self.mapType == "plains":
-            return 18 
-        if self.mapType == "cave":
-            return 10
-        elif self.mapType == "forest":
             return 15
+        elif self.mapType == "plains":
+            return 20 
+        elif self.mapType == "cave":
+            return 12
+        elif self.mapType == "forest":
+            return 18
+        elif self.mapType == "fullmap":
+            return 1
 
     def empty_map(self):
         #fill map with "blocked" tiles first
@@ -155,6 +189,11 @@ class Map:
             self.generate_cave()
         elif self.mapType == "forest":
             self.generate_forest()
+        elif self.mapType == "fullmap":
+            self.width = 20
+            self.height = 20
+            self.mappedArea = self.fill_map(libtcod.black)
+            self.starting_point = (1, 1)
 
     def generate_small_dungeon(self):
         self.width = randint(70, 110)
@@ -281,10 +320,16 @@ class Map:
         if self.mapType == "forest":
             leaves = libtcod.darker_green
             stump = libtcod.dark_sepia
-            ##     Shape
+            ##     Shape 1
             ##       #
             ##      ###
             ##       #
+            
+            ##     Shape 2
+            ##       #
+            ##      ###
+            ##      ###
+            ##       #  
             
             for i in range(80):
                 (posx, posy) = self.randomPoint()
@@ -301,6 +346,12 @@ class Map:
                 self.makeLeaf(posx, posy-2, leaves)
                 self.makeLeaf(posx-1, posy-2, leaves)                
                 self.makeLeaf(posx, posy-3, leaves)
+                if randint(0,4) >= 3:
+                    #make bigger tree
+                    self.makeLeaf(posx-1, posy-3, leaves)
+                    self.makeLeaf(posx+1, posy-3, leaves)
+                    self.makeLeaf(posx, posy-4, leaves)
+                    
             
     def makeLeaf(self, posx, posy, color):
         tile = self.mappedArea[posx][posy]
@@ -314,7 +365,7 @@ class Map:
     # cave generation code!
     def generate_cave(self):
         if self.gui is not None:
-            self.messenger.message("Generating Forest", libtcod.yellow)
+            self.messenger.message("Generating Cave", libtcod.yellow)
             self.gui.update()
             libtcod.console_flush()	
         self.width = randint(120, 200)
