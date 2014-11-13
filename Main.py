@@ -6,7 +6,10 @@ from MapObject import *
 from Camera import *
 from GUI import *
 import sys
+import winsound
 from Client import *
+import wave
+import thread
 import libtcodpy as libtcod
 
 
@@ -26,12 +29,13 @@ def main():
     con = libtcod.console_new(SCREEN_W, SCREEN_H)
 
     #Default Character fill in
-    player = Player("Phrixious")
+    player = Player("Lorinthio")
     #player = Player("Phrixious")
     player.createPlayer()
     player.equipClass("Warrior")
 
     local_map_objects = []
+    local_mobs = {}
 
     #GUI
     mouse = libtcod.Mouse()
@@ -69,13 +73,19 @@ def main():
     #libtcod.console_flush()
 
     #CLIENT
-    host = "96.28.40.36"
+    host = "localhost"
     port = "25565"
     c = Client(host, int(port), player, gui)
 
     fov_recompute = True
 
+    music = thread.start_new_thread(play_music, ('forest',))
+    
+    timer = Timer()
+    frame = 0
+    
     while not libtcod.console_is_window_closed():
+        
         libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS|libtcod.EVENT_MOUSE,key,mouse)
         #handle keys and exit game if needed
         if fov_recompute:
@@ -87,7 +97,7 @@ def main():
 
         c.Loop()
 
-        (local_players, local_map_objects) = checkClient(c, local_players, local_map_objects)
+        (local_players, local_map_objects, local_mobs) = checkClient(c, local_players, local_map_objects, local_mobs)
 
         #Check if server changed the map, or player changed zones
         if c.mapChange:
@@ -106,7 +116,10 @@ def main():
                 fov_map = fov_Map
 
             if exit:
-                break
+                try:
+                    thread.exit()
+                except:
+                    sys.exit()
 
         #for object in local_map_objects:
             #if isinstance(object, Monster):
@@ -119,6 +132,19 @@ def main():
 
         for object in objects:
             object.clear(con, camera.x, camera.y)
+            
+        frame = timer.nextFrame()
+        gui.fps = (1 / frame) // 1
+
+    
+
+def play_music(musicname):
+    path = ".//Audio/" + musicname + ".wav"
+    while True:
+        winsound.PlaySound(path, winsound.SND_LOOP)
+
+def play_sound(soundname):
+    path = ".//Audio/" + soundname + ".wav"
 
 def render(con, objects, player, gui, mouse):
     camera = player.camera
@@ -287,7 +313,7 @@ def makeMapFromServer(player, gui, local_map, c):
     ##adds to the client side list of objects
     #objects.insert(0, ID)
 
-def checkClient(c, local_players, local_objects):
+def checkClient(c, local_players, local_objects, local_mobs):
     #Check for moved players
     for name in c.moved_players:
         if name in c.removed_players:
@@ -316,17 +342,25 @@ def checkClient(c, local_players, local_objects):
         created_mob.name = mob['name']
         created_mob.ID = mob['id']
         local_objects.append(created_mob)
+        local_mobs[created_mob.ID] = created_mob
     c.spawnedMobs = []
         
+    if c.movedMobs != None:
+        movedmobs = c.movedMobs['mobinfo']
+        for ID in movedmobs:
+            localmob = local_mobs[ID]
+            localmob.x = movedmobs[ID][0]
+            localmob.y = movedmobs[ID][1] 
+        c.movedMobs = None
     
     for name in c.removed_players:
         for player in local_players:
             if player.name == name:
-                print("removing " + player.name)
+                #print("removing " + player.name)
                 local_players.remove(player)
     c.removed_players = []
     
-    return (local_players, local_objects)
+    return (local_players, local_objects, local_mobs)
     
 
 #Initial creation of character with prompts to test each class easily
@@ -356,5 +390,16 @@ def chooseClass():
         player = chooseClass() # If it fails it will repeat this code until a suitable answer is given
 
     return player
+
+class Timer:
+    
+    def __init__(self):
+        self.curTime = time.time()
+        
+    def nextFrame(self):
+        frame = time.time() - self.curTime
+        self.curTime = time.time()
+        
+        return frame
 
 main()

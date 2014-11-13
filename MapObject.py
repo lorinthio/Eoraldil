@@ -13,9 +13,8 @@ from Monster import *
 
 class Region:
     
-    def __init__(self, MH):
-        print "Generating Map..."
-        self.Map = Map(None)
+    def __init__(self, MH, mapType=""):
+        self.Map = Map(None, mapType)
         print "Generated", self.Map.mapType, "Map."
         
         #For future spawning
@@ -57,6 +56,11 @@ class Map:
         else:
             self.mappedArea = mappedArea
         self.fov_range = self.fovFind()
+        self.fov_map = libtcod.map_new(self.width, self.height)
+        for y in range(self.height):
+            for x in range(self.width):
+                libtcod.map_set_properties(self.fov_map, x, y, not self.mappedArea[x][y].block_sight, not self.mappedArea[x][y].blocked)
+        
         
     def fovFind(self):
         if self.mapType == "smalldungeon":
@@ -178,17 +182,21 @@ class Map:
         if self.mapType == "":
             mapTypes = ["smalldungeon", "cave", "forest"]
             self.mapType = choice(mapTypes)
+            print self.mapType
+            
+            
         # Generate for the maptype
         if self.mapType == "smalldungeon":
             self.generate_small_dungeon()
-        elif self.mapType == "plains":
-            self.mappedArea = self.empty_map()
-            # self.generate_plains()
-            print("need to write more plains generation code")  
         elif self.mapType == "cave":
             self.generate_cave()
         elif self.mapType == "forest":
             self.generate_forest()
+            
+        elif self.mapType == "plains":
+            self.mappedArea = self.empty_map()
+            # self.generate_plains()
+            print("need to write more plains generation code")  
         elif self.mapType == "fullmap":
             self.width = 20
             self.height = 20
@@ -292,11 +300,11 @@ class Map:
             self.messenger.message("Generating Forest", libtcod.yellow)
             self.gui.update()
         libtcod.console_flush()	
-        self.width = randint(100, 300)
-        self.height = randint(60, 180)
+        self.width = randint(80, 300) # 100, 300
+        self.height = randint(50, 180) # 60, 180
         
         self.wall_color = libtcod.Color(214, 138, 84)
-        self.floor_color = libtcod.Color(99, 214, 84)
+        self.floor_color = libtcod.Color(90, 205, 78)
 
         self.mappedArea = self.fill_map(self.wall_color)
         
@@ -307,7 +315,7 @@ class Map:
                 self.gui.update()
                 libtcod.console_flush()	
             self.automate()
-        self.generateWater()
+        self.generateDepth()
         self.colorMap()
         self.randomStartPoint()
         self.place_trees()
@@ -331,7 +339,9 @@ class Map:
             ##      ###
             ##       #  
             
-            for i in range(80):
+            trees = (self.width * self.height) / 50
+            
+            for i in range(trees):
                 (posx, posy) = self.randomPoint()
                 #make stump
                 tile = self.mappedArea[posx][posy]
@@ -383,7 +393,7 @@ class Map:
                 self.gui.update()
                 libtcod.console_flush()	
             self.automate()
-        self.generateWater()
+        self.generateDepth()
         if self.gui is not None:
             self.messenger.message("75%")
             self.gui.update()
@@ -400,11 +410,19 @@ class Map:
             for y in range(self.height):
                 tile = self.mappedArea[x][y]
                 if tile.blocked:
+                    tile.height = 0
                     tile.color = self.wall_color
-                elif tile.tileType == "water":
+                elif tile.tileType == "water" or tile.tileType== "leaves":
                     pass
                 else:
                     tile.color = self.floor_color
+                    if "forest" in self.mapType or "cave" in self.mapType:
+                        height = tile.height - 10
+                        if height < 0:
+                            height = abs(height)
+                            tile.color = self.floor_color - libtcod.Color(5 * height, 5 * height, 5 * height)
+                        elif height > 0:
+                            tile.color = self.floor_color + libtcod.Color(5 * height, 5 * height, 5 * height)
 
     def randomStartPoint(self):
         pointfound = False
@@ -415,7 +433,27 @@ class Map:
                 break
         self.starting_point = (posx, posy)
         
+    def randomSpawnPoint(self, spawned_mob):
+        mobs = self.entities
+        pointfound = False
+        ignoredTiles = ["water", "leaves"]
+        while not pointfound:
+            posx = randint(2, self.width-2)
+            posy = randint(2, self.height-2)
+            if not self.mappedArea[posx][posy].blocked:
+                if self.mappedArea[posx][posy].tileType not in ignoredTiles:
+                    Blocked = False
+                    for mob in mobs:
+                        if mob.x == posx and mob.y == posy:
+                            Blocked = True
+                    if not Blocked:
+                        mobs.append(spawned_mob)
+                        break
+                    
+        return (posx, posy) 
+    
     def randomPoint(self):
+        mobs = self.entities
         pointfound = False
         ignoredTiles = ["water", "leaves"]
         while not pointfound:
@@ -424,7 +462,8 @@ class Map:
             if not self.mappedArea[posx][posy].blocked:
                 if self.mappedArea[posx][posy].tileType not in ignoredTiles:
                     break
-        return (posx, posy)       
+                    
+        return (posx, posy)  
 
     def setupCellular(self):
         self.temp_map = self.fill_map(self.wall_color)
@@ -488,7 +527,7 @@ class Map:
                 self.mappedArea[x][y].block_sight = False
                 return
 
-    def generateWater(self):
+    def generateDepth(self):
         #noise_octaves = 4.0
         noise_zoom = 2.0
         noise_hurst = libtcod.NOISE_DEFAULT_HURST
@@ -512,6 +551,13 @@ class Map:
                         #Depth = Color darkness
                         depth = int(10 - (noisefloat * 100))
                         tile.color = water_color - libtcod.Color(5 * depth, 5 * depth, 5 * depth)
+                        tile.height = 0 - depth
+                    else:
+                        tile = mapped[x][y]
+                        height = int(noisefloat / 0.02)
+                        if height > 12:
+                            height = 12
+                        tile.height = height
 
         #Block the edges of the map so player can't crash the game
         for y in range(self.height):

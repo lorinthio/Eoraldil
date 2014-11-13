@@ -56,7 +56,7 @@ class PlayerCamera:
 		Map = self.Map
 		camera = self
 		
-		dark_offset = libtcod.Color(30, 30, 30)
+		dark_offset = libtcod.Color(50, 50, 50)
 		
 		for y in range(camera.height):
 			for x in range(camera.width):
@@ -70,11 +70,11 @@ class PlayerCamera:
 				visible = libtcod.map_is_in_fov(self.fov_map, map_x, map_y)
 				
 				if visible:
-					tile.explored = True
 					if tile.explored:
 						libtcod.console_set_char_background(con, x, y, tile.color, libtcod.BKGND_SET )
 					else:
-						libtcod.console_set_char_background(con, x, y, libtcod.black, libtcod.BKGND_SET )
+						tile.explored = True
+						libtcod.console_set_char_background(con, x, y, tile.color, libtcod.BKGND_SET )
 				else:
 					if tile.explored:
 						libtcod.console_set_char_background(con, x, y, tile.color - dark_offset, libtcod.BKGND_SET )

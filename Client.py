@@ -22,6 +22,7 @@ class Client(ConnectionListener):
 		self.moved_players = {}
 		self.removed_players = []
 		self.spawnedMobs = []
+		self.movedMobs = None
 		self.send_loc = False
 		connection.Send({"action": "nickname", "nickname": player.name})
 		t = start_new_thread(self.InputLoop, ())
@@ -51,11 +52,15 @@ class Client(ConnectionListener):
 		print "*** players: " + ", ".join([p for p in data['players']])
 	
 	def Network_message(self, data):
-		self.gui.message(data['who'] + ": " + data['message'])
+		self.message(data['who'] + ": " + data['message'], libtcod.light_green)
 		#print(data['who'] + ": " + data['message'])
+
+	def message(self, message, color):
+		self.gui.message(message, color)
 	
 	def Network_playerDisconnect(self, data):
 		self.removed_players.append(data['who'])
+		self.message(data['who'] + " has disconnected", libtcod.yellow)
 	
 	def Network_map(self, data):
 		self.mapChange = True
@@ -72,8 +77,8 @@ class Client(ConnectionListener):
         def Network_mobSpawn(self, data):
                 self.spawnedMobs.append(data)
 
-        def Network_mobMove(self, data):
-                pass
+        def Network_mobsMove(self, data):
+                self.movedMobs = data
 		
 	def Network_position(self, data):
 		self.moved_players[data['who']] = data['position']

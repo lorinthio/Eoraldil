@@ -4,7 +4,7 @@ import libtcodpy as libtcod
 class GUIHandler:
     def __init__(self, player):
 	self.gui_panels = []
-	
+	self.fps = 30
 	self.player = player
 	
 	#Message Panels
@@ -29,22 +29,35 @@ class GUIHandler:
 	gui_vitals = VitalPanel(player, 0, 41, 30, 9)
 	self.gui_panels.append(gui_vitals)	
 	
+	#gui_fps = FpsCounter(None, 73, 1, 8, 2)
+	#self.fpsPanel = gui_fps
+	#self.gui_panels.append(gui_fps)
+	
 	#Mouse Panel
-	gui_mouse = MousePanel(player, 10, 50, 40, 2)
+	gui_mouse = MousePanel(player, 0, 49, 40, 2)
 	self.MousePanel = gui_mouse
+	self.gui_panels.append(gui_mouse)
 	
     def message(self, message, color=libtcod.white):
 	self.messenger.message(message, color)
 	
     
     def update(self, objects=None, mouse=None):
-	for panel in self.gui_panels:
-	    panel.update()
 	self.activeSide.update()
-	self.messenger.update()
-	if objects != None:
-	    self.MousePanel.refresh(objects, mouse)
-	self.MousePanel.update()
+	self.messenger.update()	
+	for panel in self.gui_panels:
+	    if panel is self.MousePanel:
+		if objects != None:
+		    panel.refresh(objects, mouse)		
+	    panel.update()	 
+	    
+	    
+	    #THIS IS FOR FPS TESTING
+	    #if panel is self.fpsPanel:
+		#panel.setFps(self.fps)
+
+
+	
 
 #class EntryBar(MessagePanel):
     
@@ -53,6 +66,7 @@ class GUIHandler:
 	#MessagePanel.__init__(self, player, posx, posy, length, height, rows)
 	#self.msg = ""
 	
+
 
 class MessagePanel:
     
@@ -99,16 +113,22 @@ class MessagePanel:
 	#blit the contents of "panel" to the root console
 	libtcod.console_blit(panel, 0, 0, self.length, self.height, 0, self.posX, self.posY)  	
 
-class MousePanel(MessagePanel):
+class FpsCounter(MessagePanel):
     
     def __init__(self, player, posX, posY, length, height, rows=2):
+	MessagePanel.__init__(self, player, posX, posY, length, height, rows)
+	
+    def setFps(self, fps):
+	self.message(str(fps) + " FPS", libtcod.yellow)
+
+class MousePanel(MessagePanel):
+    
+    def __init__(self, player, posX, posY, length, height, rows=1):
 	MessagePanel.__init__(self, player, posX, posY, length, height, rows)
 	self.player = player
 	self.lastline = ""
 	
     def refresh(self, objects, mouse):
-	if mouse == None:
-	    return
 	self.get_names_under_mouse(objects, mouse)
 	
     def get_names_under_mouse(self, objects, mouse):
@@ -120,7 +140,7 @@ class MousePanel(MessagePanel):
 	#create a list with the names of all objects at the mouse's coordinates and in FOV
 	names = [obj.name for obj in objects
             if obj.x == x and obj.y == y and libtcod.map_is_in_fov(c.fov_map, obj.x, obj.y)]
-	line = ''
+	line = "     "
 	for name in names:
 	    line += name + ", "
 	line = line[0: len(line)-2].strip()
@@ -129,6 +149,8 @@ class MousePanel(MessagePanel):
 	   return
 	
 	self.lastline = line
+	if line == "":
+	    line = "-"
 	self.message(line, libtcod.yellow)
 	
 	

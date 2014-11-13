@@ -7,7 +7,7 @@ sys.path.append('.//PodSixNet')
 from PodSixNet.Server import Server
 from PodSixNet.Channel import Channel
 from MapObject import *
-from threading import *
+from thread import *
 from Monster import *
 import time
 import select
@@ -114,7 +114,7 @@ class EoraldilServer(Server):
     def AddPlayer(self, player):
         self.sendMap(player)
         self.sendMobs(player)  
-        print "sending map"
+        print "sending map to", player
         self.SendPlayersInMap(player)
         self.players[player] = True
         newplayer = EntityObject(1, 1)
@@ -125,7 +125,10 @@ class EoraldilServer(Server):
     def DelPlayer(self, player):
         for p in self.players:
             data = {"action": "playerDisconnect", "who": player.nickname}
+            print player.nickname, "has disconnected from the server"
             p.Send(data)
+        self.players[player] = None
+        del(player)
 
     def sendMobs(self, player):
         region = self.regions[0]
@@ -162,7 +165,7 @@ class EoraldilServer(Server):
             region = Region(self.MH)
             self.regions.append(region)
         print "Generated World with", regions, "regions"
-    
+        
     def serverLoop(self):
         sleep(0.001)
     
@@ -173,8 +176,11 @@ class EoraldilServer(Server):
             action = mob.takeAction(deltaT, region.Map, region.objects)
             if action:
                 mobdata[mob.ID] = (mob.x, mob.y)
-            
-        data = {"action": "mobsMove", "mobinfo": mobdata}
+        
+        if mobdata != {}:
+            data = {"action": "mobsMove", "mobinfo": mobdata}
+            for p in self.players:
+                p.Send(data)
                 
     def Launch(self):
         timer = Timer()
@@ -197,7 +203,7 @@ class Timer:
         return frame
 
 def main():
-    host = "localhost"
+    host = "localhost" # Don't use localhost when broadcasting publically
     port = "25565"
     s = EoraldilServer(localaddr=(host, int(port)))
     s.Launch()

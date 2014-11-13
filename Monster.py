@@ -76,6 +76,9 @@ class MonsterHandler:
 	
 class Creature(EntityObject):
 	def __init__(self, Name, color=libtcod.blue, size="medium"):
+		# Make it a map object
+		EntityObject.__init__(self, 1, 1, Name[0], color, solid=True)		
+		
 		#Skill storage
 		self.name = Name
 		self.aggresive = False
@@ -118,9 +121,6 @@ class Creature(EntityObject):
 		self.attackTimer = 0
 
 		self.ai = BasicMonster(self)
-
-		# Make it a map object
-		EntityObject.__init__(self, 1, 1, self.name[0], color, solid=True)
 		
 	def setAttacks(self, attacks):
 		self.attacks = attacks
@@ -179,7 +179,7 @@ class Creature(EntityObject):
 			self.stamina = (self.strength - 4) * 3
 			self.maxStamina = self.stamina
 			
-			self.moveSpeed = ((80 - agility) / 58.00) *   3.00
+			self.moveSpeed = ((80 - agility) / 58.00) *   3.00	
 		
 	def takeAction(self, deltaT, Map, objects):
 		self.moveTimer += deltaT
@@ -199,7 +199,7 @@ class Creature(EntityObject):
 			return True
 		
 	def spawn(self, Map=None):
-		spawn_mob = copy(self)
+		spawn_mob = deepcopy(self)
 		strmod = randint(-3, 3)
 		conmod = randint(-3, 3)
 		dexmod = randint(-3, 3)
@@ -215,10 +215,14 @@ class Creature(EntityObject):
 		spawn_mob.intelligence += intmod
 		
 		spawn_mob.updateStats()
+		spawn_mob.Map = Map
 		
-		(spawn_mob.x, spawn_mob.y) = Map.randomPoint()
+		(spawn_mob.x, spawn_mob.y) = Map.randomSpawnPoint(self)
 
 		return spawn_mob
+		
+	def checkSenses(self):
+		pass
 		
 	def attack(self, target):
 		attacks = self.attacks.keys()
@@ -237,7 +241,6 @@ class Monster(Creature):
 		#Skill storage
 		Creature.__init__(self, Name, libtcod.red, size)
 		self.aggresive = True
-		self.ai = BasicMonster(self)
 		
 class Boss(Monster):
 	
