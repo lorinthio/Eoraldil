@@ -18,6 +18,7 @@ class Client(ConnectionListener):
 		print "Client started"
 		self.chunks = []
 		self.gui = gui
+		player.client = self
 		self.player = player
 		self.moved_players = {}
 		self.removed_players = []
@@ -25,8 +26,7 @@ class Client(ConnectionListener):
 		self.movedMobs = None
 		self.send_loc = False
 		connection.Send({"action": "nickname", "nickname": player.name})
-		t = start_new_thread(self.InputLoop, ())
-		
+
 	def sendLocation(self):
 		player = self.player
 		connection.Send({"action": "position", "position": (player.x, player.y)})
@@ -37,6 +37,9 @@ class Client(ConnectionListener):
 			self.send_loc = False
 		connection.Pump()
 		self.Pump()
+	
+	def sendMessage(self, line):
+		connection.Send({"action": "message", "message": line})
 	
 	def InputLoop(self):
 		# horrid threaded input loop
@@ -52,7 +55,7 @@ class Client(ConnectionListener):
 		print "*** players: " + ", ".join([p for p in data['players']])
 	
 	def Network_message(self, data):
-		self.message(data['who'] + ": " + data['message'], libtcod.light_green)
+		self.message("[" + (data['who'].split())[0] + "] : " + data['message'], libtcod.light_green)
 		#print(data['who'] + ": " + data['message'])
 
 	def message(self, message, color):

@@ -8,10 +8,12 @@ class GUIHandler:
 	self.player = player
 	
 	#Message Panels
-	gui_message = MessagePanel(player, 40, 41, 40, 10)
+	gui_message = MessagePanel(None, 40, 41, 40, 9)
 	gui_message.message("Welcome to Eoraldil!", libtcod.yellow)
 	gui_message.message("Your journey begins... ", libtcod.grey)
 	self.messenger = gui_message
+	
+
 	
 	#Inventory Panel
 	inventory = InventoryPanel(player, 62, 0, 19, 39)
@@ -34,9 +36,14 @@ class GUIHandler:
 	#self.gui_panels.append(gui_fps)
 	
 	#Mouse Panel
-	gui_mouse = MousePanel(player, 0, 49, 40, 2)
+	gui_mouse = MousePanel(player, 0, 49, 30, 2)
 	self.MousePanel = gui_mouse
 	self.gui_panels.append(gui_mouse)
+	
+	#Entry Bar
+	gui_entry = EntryBar(player, 40, 49, 35, 2)
+	self.entry = gui_entry
+	self.gui_panels.append(gui_entry)
 	
     def message(self, message, color=libtcod.white):
 	self.messenger.message(message, color)
@@ -44,7 +51,8 @@ class GUIHandler:
     
     def update(self, objects=None, mouse=None):
 	self.activeSide.update()
-	self.messenger.update()	
+	self.messenger.update()
+	self.entry.update()
 	for panel in self.gui_panels:
 	    if panel is self.MousePanel:
 		if objects != None:
@@ -59,13 +67,7 @@ class GUIHandler:
 
 	
 
-#class EntryBar(MessagePanel):
-    
-    #def __init__(self, gui, player, posx, posy, length, height=1, rows=1):
-	#self.owner = gui
-	#MessagePanel.__init__(self, player, posx, posy, length, height, rows)
-	#self.msg = ""
-	
+
 
 
 class MessagePanel:
@@ -112,6 +114,29 @@ class MessagePanel:
 	    
 	#blit the contents of "panel" to the root console
 	libtcod.console_blit(panel, 0, 0, self.length, self.height, 0, self.posX, self.posY)  	
+
+class EntryBar(MessagePanel):
+    
+    def __init__(self, player, posx, posy, length, height, rows=1):
+	MessagePanel.__init__(self, player, posx, posy, length, height, rows)
+	self.msg = ""
+	
+    def addLetter(self, char):
+	self.msg += char
+	self.message(self.msg[-30:])
+	
+    def removeLetter(self):
+	self.msg = self.msg[:-1]
+	self.message(self.msg[-30:])
+	
+    def emptyBar(self):
+	self.msg = ""
+	
+    def endEntry(self):
+	self.player.client.sendMessage(self.msg)
+	self.msg = ""
+	self.message("_")
+	
 
 class FpsCounter(MessagePanel):
     

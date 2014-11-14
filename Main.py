@@ -29,7 +29,7 @@ def main():
     con = libtcod.console_new(SCREEN_W, SCREEN_H)
 
     #Default Character fill in
-    player = Player("Lorinthio")
+    player = Player("Lorinthio Shivst")
     #player = Player("Phrixious")
     player.createPlayer()
     player.equipClass("Warrior")
@@ -158,47 +158,60 @@ def handle_keys(player, local_Map, objects, gui, key):
     y = 0
     fov_recompute = False
     mapChange = False
+    if player.typing:
+        typeHandler(key, gui)
     if key.vk == libtcod.KEY_CHAR:
-        #Movement
-        if key.c == ord('w'):
-            y = -1
-            fov_recompute = True
-            #print('w')
-        elif key.c == ord('s'):
-            y = 1
-            fov_recompute = True
-            #print('s')
-        elif key.c == ord('a'):
-            x = -1
-            fov_recompute = True
-            #print('a')
-        elif key.c == ord('d'):
-            x = 1
-            fov_recompute = True
-            #print('d')
+        if player.typing:
+            pass # Ignore this block
+        else:
+            #Movement
+            if key.c == ord('w'):
+                y = -1
+                fov_recompute = True
+                #print('w')
+            elif key.c == ord('s'):
+                y = 1
+                fov_recompute = True
+                #print('s')
+            elif key.c == ord('a'):
+                x = -1
+                fov_recompute = True
+                #print('a')
+            elif key.c == ord('d'):
+                x = 1
+                fov_recompute = True
+                #print('d')
+    
+            #Side Windows
+            elif key.c == ord('p'):
+                gui.activeSide = gui.character
+            elif key.c == ord('o'):
+                gui.activeSide = gui.equipment
+            elif key.c == ord('i'):
+                gui.activeSide = gui.inventory
+    
+            #Action Keys
+            elif key.c == ord('e'):
+                use_nearby(player, local_Map, objects)
+    
+    
+            #Misc
+            elif key.c == ord("n"):
+                (local_Map, fov_Map) = newMap(player, gui)
+                fov_recompute = True
+                mapChange = True
 
-        #Side Windows
-        elif key.c == ord('p'):
-            gui.activeSide = gui.character
-        elif key.c == ord('o'):
-            gui.activeSide = gui.equipment
-        elif key.c == ord('i'):
-            gui.activeSide = gui.inventory
 
-        #Action Keys
-        elif key.c == ord('e'):
-            use_nearby(player, local_Map, objects)
-
-
-        #Misc
-        elif key.c == ord("n"):
-            (local_Map, fov_Map) = newMap(player, gui)
-            fov_recompute = True
-            mapChange = True
 
     if key.vk == libtcod.KEY_ENTER and key.lalt:
         #Alt+Enter: toggle fullscreen
         libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
+    elif key.vk == libtcod.KEY_ENTER:
+        if not player.typing:
+            player.typing = True
+        else:
+            player.typing = False
+            gui.entry.endEntry()
 
     elif key.vk == libtcod.KEY_ESCAPE:
         return (True, fov_recompute, None, None)  #exit game
@@ -209,6 +222,13 @@ def handle_keys(player, local_Map, objects, gui, key):
         return(False, fov_recompute, None, None)
     else:
         return(False, fov_recompute, local_Map, fov_Map)
+
+def typeHandler(key, gui):
+    if key.vk == libtcod.KEY_BACKSPACE:
+            gui.entry.removeLetter()
+    elif key.vk != 0:
+        if key.c != 0:
+            gui.entry.addLetter(chr(key.c))
 
 def use_nearby(player, Map, objects):
     print('Tried to use nearby')

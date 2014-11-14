@@ -2,6 +2,7 @@ from random import *
 from copy import *
 from Object import *
 from ObjectAi import *
+from math import *
 
 #Simply a placeholder until I work on this more
 
@@ -241,8 +242,105 @@ class Monster(Creature):
 		#Skill storage
 		Creature.__init__(self, Name, libtcod.red, size)
 		self.aggresive = True
-		
+
+#Placeholder until I work on indepth boss building		
 class Boss(Monster):
 	
 	def __init__(self, Name):
 		pass
+
+
+#Senses are for monsters to find a target by different means
+    #Sight = Checks in a direction to see if a player exists
+    #Smell = Checks aoe with a low chance to detect the player
+    #Sound = Checks aoe with a high chance if player is moving in range
+    #Parameters = distance(distance to sense)
+    
+    
+#Empty class for organization of senses 
+class Sense:
+	
+	def __init__(self, owner):
+		pass
+	
+	#Replaced by subclass class	
+	def check(self):
+		pass
+	
+class Sight(Sense):
+	
+	#Most intensive, checks between 2 vectors based on direction to see if a target is available
+	
+	def __init__(self, distance, owner):
+		self.d = distance
+		self.dsquare = self.d**2
+		self.owner = owner
+		
+	def check(self, target):
+		direct = self.owner.direction
+		dist = self.d
+		#####
+		#these are algos to check if a target is in view
+		#####
+		
+		self.owner.x = 0
+		self.owner.y = 0		
+		
+		if direct == "North":
+			vStart = (self.d * cos(pi / 4), self.d * sin(pi /4))
+			vEnd = (self.d * cos(3*pi / 4), self.d * sin(3*pi /4))
+		elif direct == "NorthWest":
+			vStart = (0, self.d)
+			vEnd = (-self.d, 0)
+		elif direct == "West":
+			vStart = (self.d * cos(3*pi / 4), self.d * sin(3*pi /4))
+			vEnd = (self.d * cos(5*pi / 4), self.d * sin(5*pi /4))
+		elif direct == "SouthWest":
+			vStart = (-self.d, 0)
+			vEnd = (0, -self.d)
+		elif direct == "South":
+			vStart = (self.d * cos(5*pi / 4), self.d * sin(5*pi /4))
+			vEnd = (self.d * cos(7*pi / 4), self.d * sin(7*pi /4))
+		elif direct == "SouthEast":
+			vStart = (0, -self.d)
+			vEnd = (self.d, 0)
+		elif direct == "East":
+			vStart = (self.d * cos(7*pi / 4), self.d * sin(7*pi /4))
+			vEnd = (self.d * cos(9*pi / 4), self.d * sin(9*pi /4))
+		elif direct == "NorthEast":
+			vStart = (self.d, 0)
+			vEnd = (0, self.d)
+			
+	
+		print self.isInView(target, vStart, vEnd)
+			
+	def isInView(self, possTarget, vectorStart, vectorEnd):
+		relativeLoc = ((possTarget.x - self.owner.x), (possTarget.y - self.owner.y))
+		
+		return not self.areClockwise(vectorStart, relativeLoc) and self.areClockwise(vectorEnd, relativeLoc) and self.isWithinRadius(relativeLoc)
+	
+	def areClockwise(self, v1, v2):
+		v1x = v1[0]
+		v1y = v1[1]
+		
+		v2x = v2[0]
+		v2y = v2[1]
+		
+		return -v1x*v2y + v1y*v2x > 0
+	
+	def isWithinRadius(self, loc):
+		x = loc[0]
+		y = loc[1]
+		
+		return x**2 + y**2 <= self.dsquare
+	
+def test():
+	owner = Monster("Young Orc", size="small")
+	owner.direction = "West"
+	sight = Sight(10, owner)
+	
+	target = Monster("Young Orc", size="small")
+	target.x = -4
+	target.y = 5
+	
+	sight.check(target)

@@ -11,6 +11,7 @@ from thread import *
 from Monster import *
 import time
 import select
+import traceback
 
 class ClientChannel(Channel):
     """
@@ -29,7 +30,11 @@ class ClientChannel(Channel):
     ##################################
     
     def Network_message(self, data):
-        self._server.SendToAll({"action": "message", "message": data['message'], "who": self.nickname})
+        if data['message'][0] == "/":
+            self.handle_command(data['message'])
+        else:
+            self._server.SendToAll({"action": "message", "message": data['message'], "who": self.nickname})
+            print "[" + self.nickname + "] : " + data['message']
     
     def Network_nickname(self, data):
         self.nickname = data['nickname']
@@ -37,7 +42,6 @@ class ClientChannel(Channel):
             if playerObj.address == self:
                 playerObj.name = self.nickname
                 break
-        
         
     def Network_position(self, data):
         data = {"action": "position", "position": data['position'], "who": self.nickname}
@@ -59,7 +63,7 @@ class EoraldilServer(Server):
         
         #Makes the regions from scratch
         self.MH = MonsterHandler()
-        self.generateWorld(4)
+        self.generateWorld()
             
         Server.__init__(self, *args, **kwargs)
         print 'Server launched'
@@ -86,7 +90,7 @@ class EoraldilServer(Server):
                 exit(0)
 
     def sendMap(self, player):
-        region = self.regions[0]
+        region = self.regions[(0, 0)]
         Map = region.Map
         data = {"action": "map",  
                     "startingPoint": Map.starting_point,
@@ -109,29 +113,37 @@ class EoraldilServer(Server):
             time.sleep(0.1)
         finished = {"action": "mapDone"}
         player.Send(finished)
-        print("sending mobs")
     
     def AddPlayer(self, player):
         self.sendMap(player)
         self.sendMobs(player)  
-        print "sending map to", player
         self.SendPlayersInMap(player)
         self.players[player] = True
         newplayer = EntityObject(1, 1)
         newplayer.address = player
         newplayer.name = ""
+        newplayer.address = player
         self.playerObjects.append(newplayer)
+        
+        init_region = self.regions[(0,0)]
+        init_region.addPlayer(newplayer)
+        player.region = init_region
     
     def DelPlayer(self, player):
-        for p in self.players:
-            data = {"action": "playerDisconnect", "who": player.nickname}
-            print player.nickname, "has disconnected from the server"
-            p.Send(data)
-        self.players[player] = None
-        del(player)
+        try:
+            region = player.region
+            region.removePlayer(player)
+            for p in self.players:
+                data = {"action": "playerDisconnect", "who": player.nickname}
+                print player.nickname, "has disconnected"
+                p.Send(data)
+            del self.players[player]
+        except:
+            print "Problem in DelPlayer"
+            traceback.print_exc()
 
     def sendMobs(self, player):
-        region = self.regions[0]
+        region = self.regions[(0,0)]
         for mob in region.mobs:
             data = {"action": "mobSpawn",
                         "name": mob.name,
@@ -158,29 +170,44 @@ class EoraldilServer(Server):
             if p is not player:
                 p.Send(data)
     
-    def generateWorld(self, regions):
+    def generateWorld(self):
         print "Generating World..."
-        self.regions = []
-        for i in range(regions):
-            region = Region(self.MH)
-            self.regions.append(region)
-        print "Generated World with", regions, "regions"
+        region1 = Region(self.MH, location=(0,0)) # Center region
+        region2 = Region(self.MH, location=(0,1)) # North region
+        region3 = Region(self.MH, location=(1,0)) # East region
+        region4 = Region(self.MH, location=(0,-1))# South region
+        region5 = Region(self.MH, location=(-1,0))# West region
+        
+        #Regions referenced by global location
+        self.regions = {(0,0): region1, (0,1): region2, (1,0): region3, (0, -1): region4, (-1, 0): region5}
+        
+        #Regions ordered like...
+        
+        #      (0, 1)
+        #(-1,0)(0, 0) (1, 0)
+        #      (0,-1)
+        
+        #Could later add in weather patterns to move across the regions =D
+        print "Generated World with", len(self.regions), "regions"
         
     def serverLoop(self):
         sleep(0.001)
     
     def automateMobs(self, deltaT):
-        region = self.regions[0]
-        mobdata = {}
-        for mob in region.mobs:
-            action = mob.takeAction(deltaT, region.Map, region.objects)
-            if action:
-                mobdata[mob.ID] = (mob.x, mob.y)
-        
-        if mobdata != {}:
-            data = {"action": "mobsMove", "mobinfo": mobdata}
-            for p in self.players:
-                p.Send(data)
+        for loc in self.regions:
+            #A region is active if a player is in it.
+            region = self.regions[loc]
+            if region.active:
+                mobdata = {}
+                for mob in region.mobs:
+                    action = mob.takeAction(deltaT, region.Map, region.objects)
+                    if action:
+                        mobdata[mob.ID] = (mob.x, mob.y)
+                
+                if mobdata != {}:
+                    data = {"action": "mobsMove", "mobinfo": mobdata}
+                    for p in region.players:
+                        p.address.Send(data)
                 
     def Launch(self):
         timer = Timer()

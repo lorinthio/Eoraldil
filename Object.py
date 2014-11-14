@@ -45,8 +45,27 @@ class EntityObject():
         self.solid = solid
 
     def put(self, x, y):
+        dx = x - self.x
+        dy = y - self.y
+        self.findDirection(dx, dy)
+        
         self.x = x
         self.y = y
+
+    def findDirection(self, dx, dy):
+        #To find the direction the Entity is facing
+        d = ""
+        if dy == -1:
+            d += "North"
+        elif dy == 1:
+            d += "South"        
+        if dx == 1:
+            d += "East"
+        elif dx == -1:
+            d += "West"
+        
+        if d != "":
+            self.direction = d
 
     def move(self, dx, dy, Map, objects):
         x = self.x + dx
@@ -54,6 +73,7 @@ class EntityObject():
         if not self.is_blocked(Map, x, y, objects):
             self.x = x
             self.y = y
+            self.findDirection(dx, dy)
 
     def is_blocked(self, Map, x, y, objects):
         #first test the map tile

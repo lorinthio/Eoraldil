@@ -37,6 +37,7 @@ class Player(EntityObject):
 		self.nickName = name
 		self.curClass = None
 		
+		self.typing = False
 		
 	def createPlayer(self):
 		self.classes = {"Warrior": Warrior(), "Rogue": Rogue(), "Cleric": Cleric(), "Mage": Mage()}

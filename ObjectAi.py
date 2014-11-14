@@ -27,10 +27,12 @@ class BasicMonster:
             self.move_to_target(Map)
 
     def wander(self, Map, objects):
-        dx = randint(-1, 1)
-        dy = randint(-1, 1)
-        
-        self.owner.move(dx, dy, Map, objects)
+        # 40% chance to move, 60% chance to stand still
+        if randint(1,100) <= 40:
+            dx = randint(-1, 1)
+            dy = randint(-1, 1)
+            
+            self.owner.move(dx, dy, Map, objects)
         
     def checkSenses(self):
         target = self.owner.checkSenses()

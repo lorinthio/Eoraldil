@@ -13,9 +13,10 @@ from Monster import *
 
 class Region:
     
-    def __init__(self, MH, mapType=""):
+    def __init__(self, MH, mapType="", location=(0, 0)):
         self.Map = Map(None, mapType)
-        print "Generated", self.Map.mapType, "Map."
+        print "Generated new region at", location
+        self.active = False
         
         #For future spawning
         self.MH = MH
@@ -27,10 +28,23 @@ class Region:
         self.objects = self.mobs + self.players
         
     def addPlayer(self, player):
+        if len(self.players) == 0:
+            self.active = True
         self.players.append(player)
         
     def removePlayer(self, player):
-        self.players.remove(player)
+        for p in self.players:
+            if p.address == player:
+                self.players.remove(p)
+        
+        #If the region is empty then deativate it
+        if len(self.players) == 0:
+            self.active = False
+            self.save()
+        
+    def save(self):
+        # for when we start saving region states
+        pass
         
     def spawnCreatures(self, MH):
         mobs = []
@@ -182,7 +196,6 @@ class Map:
         if self.mapType == "":
             mapTypes = ["smalldungeon", "cave", "forest"]
             self.mapType = choice(mapTypes)
-            print self.mapType
             
             
         # Generate for the maptype
