@@ -3,6 +3,8 @@ from copy import *
 from Object import *
 from ObjectAi import *
 from math import *
+from Character import Player
+import time
 
 #Simply a placeholder until I work on this more
 
@@ -14,13 +16,20 @@ class MonsterHandler:
 
 	def spawnMonster(self, Map):
                 areaType = Map.mapType
+		mob = None
 		if "forest" in areaType.lower():
 			mob = choice(self.monsterGroups["Forest"])
 		elif "cave" in areaType.lower():
 			mob = choice(self.monsterGroups["Cave"])
 		elif "dungeon" in areaType.lower():
                         mob = choice(self.monsterGroups["Dungeon"])
-		return mob.spawn(Map)
+		elif "plains" in areaType.lower():
+			pass
+		######
+		#NEEED CODE HERE!!!!!!
+		######
+		if mob != None:
+			return mob.spawn(Map)
 		
 	def makeMonsters(self):
 		self.monsterGroups = {}
@@ -36,6 +45,7 @@ class MonsterHandler:
                 smallOrc = Monster("Young Orc", size="small")
                 smallOrc.setStats(16, 14, 11, 10, 8, 8)
                 smallOrc.setAttacks({"Slash": [1, 6], "Chop": [2, 4]})
+		smallOrc.setSenses([Sight(6)])
                 dungeon.append(smallOrc)
 		
 		return dungeon
@@ -50,6 +60,7 @@ class MonsterHandler:
 		DireRabbit = Monster("Dire Rabbit", size="small")
 		DireRabbit.setStats(15, 12, 16, 16, 12, 12)
 		DireRabbit.setAttacks({"Bite": [1, 6], "Feral Bite": [3,4]})
+		DireRabbit.setSenses([Sight(6)])
 		forest.append(DireRabbit)
 		
 		return forest
@@ -57,19 +68,25 @@ class MonsterHandler:
 	def makeCaveCreatures(self):
 		cave = []
 		
+		senses = []
+		senses.append(Sight(6))
+		
 		Bslime = Creature("Blue Slime", size="small")
 		Bslime.setStats(8, 8, 12, 16, 8, 8)
 		Bslime.setAttacks({"Suck": [1,4], "Slam": [2, 3]})
+		Bslime.setSenses(senses)
 		cave.append(Bslime)
 		
 		Gslime = Monster("Green Slime", size="small")
 		Gslime.setStats(10, 9, 13, 13, 8, 8)
 		Gslime.setAttacks({"Suck": [1,4], "Slam": [2, 3]})
+		Gslime.setSenses(senses)
 		cave.append(Gslime)
 		
 		bat = Creature("Bat", size ="tiny")
 		bat.setStats(7, 6, 14, 14, 8, 8)
 		bat.setAttacks({"Bite": [2,2]})
+		bat.setSenses(senses)
 		cave.append(bat)
 		
 		return cave
@@ -122,9 +139,20 @@ class Creature(EntityObject):
 		self.attackTimer = 0
 
 		self.ai = BasicMonster(self)
+		self.senses = []
+		self.senseTimer = 0
+		self.attackReady = False
+		self.moveReady = False
+		self.target = None
+		
+		self.attacked = None
+		self.moved = False
 		
 	def setAttacks(self, attacks):
 		self.attacks = attacks
+		
+	def setSenses(self, senses):
+		self.senses = senses
 		
 	def setStats(self, STR, CON, DEX, AGI, WIS, INT):
 		self.strength = STR
@@ -184,20 +212,31 @@ class Creature(EntityObject):
 		
 	def takeAction(self, deltaT, Map, objects):
 		self.moveTimer += deltaT
-		moveReady = False
-		attackReady = False
 		
+		self.senseTimer += deltaT
+		
+		# Senses occur every second regardless of speed
+		# Look around for a target
+		if self.target == None:
+			if self.senseTimer >= 1:
+				self.senseTimer -= 1			
+				self.checkSenses(objects)
+
+		#Check the movetimer
 		if self.moveTimer >= self.moveSpeed:
-			moveReady = True
+			self.moveReady = True
 			self.moveTimer -= self.moveSpeed
-		self.attackTimer += deltaT
-		if self.attackTimer >= self.attackSpeed:
-			attackReady = True
-			self.attackTimer -= self.attackSpeed
+		if not self.attackReady:
+			self.attackTimer += deltaT
+			if self.attackTimer >= self.attackSpeed:
+				self.attackReady = True
+				self.attackTimer = 0
 			
-		if moveReady or attackReady:
+		if self.moveReady or self.attackReady:
 			self.ai.takeAction(Map, objects)
 			return True
+		
+
 		
 	def spawn(self, Map=None):
 		spawn_mob = deepcopy(self)
@@ -216,24 +255,34 @@ class Creature(EntityObject):
 		spawn_mob.intelligence += intmod
 		
 		spawn_mob.updateStats()
-		spawn_mob.Map = Map
 		
 		(spawn_mob.x, spawn_mob.y) = Map.randomSpawnPoint(self)
 
 		return spawn_mob
 		
-	def checkSenses(self):
-		pass
+	def checkSenses(self, targs):
+		targetfound = False
 		
-	def attack(self, target):
-		attacks = self.attacks.keys()
-		NameAttack = choice(list(attacks))
+		#If mob doesnt have a target check senses for one
+		if self.target == None:
+			for sense in self.senses:
+				target = sense.check(targets=targs, owner=self)
+				if target != None:
+					self.target = target
+					break
 		
-		attack = self.attacks[NameAttack]
-		damage = 0
-		for i in range(attack[0]):
-			damage += randint(1, attack[1])
-		print(self.name + " has used " + NameAttack + " for " + str(damage) + " damage.")
+	def attack(self):
+		if self.target != None:
+			self.attackReady = False
+			attacks = self.attacks.keys()
+			NameAttack = choice(list(attacks))
+			
+			attack = self.attacks[NameAttack]
+			damage = 0
+			for i in range(attack[0]):
+				damage += randint(1, attack[1])
+			self.attacked = (self.name, NameAttack, self.target.name, damage)
+			#print(self.name + " has used " + NameAttack + " for " + str(damage) + " damage.")
 
 
 class Monster(Creature):
@@ -252,7 +301,7 @@ class Boss(Monster):
 
 #Senses are for monsters to find a target by different means
     #Sight = Checks in a direction to see if a player exists
-    #Smell = Checks aoe with a low chance to detect the player
+    #Smell = Checks aoe with a low chance to detect the player (Later will be able to track a players path)
     #Sound = Checks aoe with a high chance if player is moving in range
     #Parameters = distance(distance to sense)
     
@@ -260,7 +309,7 @@ class Boss(Monster):
 #Empty class for organization of senses 
 class Sense:
 	
-	def __init__(self, owner):
+	def __init__(self):
 		pass
 	
 	#Replaced by subclass class	
@@ -271,20 +320,19 @@ class Sight(Sense):
 	
 	#Most intensive, checks between 2 vectors based on direction to see if a target is available
 	
-	def __init__(self, distance, owner):
+	def __init__(self, distance):
+		Sense.__init__(self)
 		self.d = distance
 		self.dsquare = self.d**2
-		self.owner = owner
+		self.owner = None
 		
-	def check(self, target):
-		direct = self.owner.direction
+	def check(self, targets, owner=None):
+		self.owner = owner
+		direct = owner.direction
 		dist = self.d
 		#####
 		#these are algos to check if a target is in view
-		#####
-		
-		self.owner.x = 0
-		self.owner.y = 0		
+		#####	
 		
 		if direct == "North":
 			vStart = (self.d * cos(pi / 4), self.d * sin(pi /4))
@@ -311,8 +359,13 @@ class Sight(Sense):
 			vStart = (self.d, 0)
 			vEnd = (0, self.d)
 			
+		searchrange = self.d ** 2
 	
-		print self.isInView(target, vStart, vEnd)
+		for target in targets:
+			if isinstance(target, Player):
+				if abs((target.x - owner.x)**2 - (target.y - owner.y)**2) <= searchrange:
+					if self.isInView(target, vStart, vEnd):
+						return target
 			
 	def isInView(self, possTarget, vectorStart, vectorEnd):
 		relativeLoc = ((possTarget.x - self.owner.x), (possTarget.y - self.owner.y))
@@ -334,13 +387,26 @@ class Sight(Sense):
 		
 		return x**2 + y**2 <= self.dsquare
 	
-def test():
-	owner = Monster("Young Orc", size="small")
-	owner.direction = "West"
-	sight = Sight(10, owner)
+class Smell(Sense):
+	### Aoe test for trail of player (make it small, maybe 3 or 4 blocks, max)
+	def __init__(self, distance):
+		self.d = distance
+		
+	def check(self, owner):
+		pass
+		
 	
-	target = Monster("Young Orc", size="small")
-	target.x = -4
-	target.y = 5
 	
-	sight.check(target)
+class Sound(Sense):
+	### Player moves in radius of distance = aggro
+	### If the players gear is noisy (plate/chain) they have a higher chance
+	###    of being heard
+	
+	
+	#distance : radius to check
+	#sensitivity : decay over distance
+	def __init__(self, distance, sensitivity):
+		self.d = distance
+		
+	def check(self, owner):
+		pass

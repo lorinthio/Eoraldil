@@ -16,8 +16,8 @@ import libtcodpy as libtcod
 def main():
     setrecursionlimit(3500)
     #Window
-    SCREEN_W = 81
-    SCREEN_H = 51
+    SCREEN_W = 91
+    SCREEN_H = 61
     LIMIT_FPS = 30
 
     #Make Libtcod Available
@@ -29,7 +29,7 @@ def main():
     con = libtcod.console_new(SCREEN_W, SCREEN_H)
 
     #Default Character fill in
-    player = Player("Lorinthio Shivst")
+    player = Player("Lorinthio")
     #player = Player("Phrixious")
     player.createPlayer()
     player.equipClass("Warrior")
@@ -66,8 +66,6 @@ def main():
             libtcod.map_set_properties(fov_map, x, y, not local_map.mappedArea[x][y].block_sight, not local_map.mappedArea[x][y].blocked)
 
     camera = PlayerCamera(player, local_map, fov_map)
-    player.camera = camera
-    camera.move_camera()
 
     #gui.update()
     #libtcod.console_flush()
@@ -79,7 +77,7 @@ def main():
 
     fov_recompute = True
 
-    music = thread.start_new_thread(play_music, ('forest',))
+    #music = thread.start_new_thread(play_music, ('forest',))
     
     timer = Timer()
     frame = 0
@@ -102,7 +100,12 @@ def main():
         #Check if server changed the map, or player changed zones
         if c.mapChange:
             c.mapChange = False
-            (local_map, fov_Map) =  makeMapFromServer(player, gui, local_map, c)
+            
+            mapChangeList = []
+            makeMapFromServer(player, gui, local_map, c, mapChangeList)
+            local_map = mapChangeList[0]
+            fov_Map = mapChangeList[1]
+
             fov_recompute = True
             fov_map = fov_Map
 
@@ -202,6 +205,8 @@ def handle_keys(player, local_Map, objects, gui, key):
                 mapChange = True
 
 
+    if key.vk == libtcod.KEY_TAB:
+        target(player, objects)
 
     if key.vk == libtcod.KEY_ENTER and key.lalt:
         #Alt+Enter: toggle fullscreen
@@ -222,6 +227,20 @@ def handle_keys(player, local_Map, objects, gui, key):
         return(False, fov_recompute, None, None)
     else:
         return(False, fov_recompute, local_Map, fov_Map)
+
+def target(player, objects):
+    target = False
+    visibleTargs = []
+    for object in objects:
+        if object != player:
+            visible = libtcod.map_is_in_fov(player.camera.fov_map, object.x, object.y)
+            if visible:
+                if player.target == None:
+                    # If player doesnt have a target get the first one
+                    player.target = object
+                    target = True
+                    break
+                visibleTargs.append(object)
 
 def typeHandler(key, gui):
     if key.vk == libtcod.KEY_BACKSPACE:
@@ -259,9 +278,7 @@ def newMap(player, gui, local_Map=None):
 
     return (local_Map, fov_Map)
 
-def makeMapFromServer(player, gui, local_map, c):
-    gui.update
-    libtcod.console_flush()    
+def makeMapFromServer(player, gui, local_map, c, threadlist): 
     data = c.mapData
     startpoint = data['startingPoint']
     width = data['width']
@@ -276,25 +293,11 @@ def makeMapFromServer(player, gui, local_map, c):
     while not c.mapDone:
         c.Loop()
 
-    singletile = float(100 * (1 / width))
-    count = 0
-    i = 0
-
     for x in range(width):
-        count += singletile
-        if count >= 10:
-            i += 1
-            gui.message(str(i * 10) + "% loaded from server", libtcod.yellow)
-            gui.update
-            libtcod.console_flush()
         chunk = c.chunks[x]
         for y in range(height):
             tileinfo = chunk[str(y)]
             mapped[x][y] = Tile(tileinfo[0], tileinfo[1], tileinfo[2], libtcod.Color(tileinfo[3][0], tileinfo[3][1], tileinfo[3][2]))
-
-    gui.message("Initializing map", libtcod.yellow)
-    gui.update
-    libtcod.console_flush()
 
     newmap = local_map
     newmap.mappedArea = mapped
@@ -317,7 +320,9 @@ def makeMapFromServer(player, gui, local_map, c):
     player.camera.fov_map = fov_Map
     player.camera.move_camera()
 
-    return (newmap, fov_Map)
+    threadlist.append(newmap)
+    threadlist.append(fov_Map)
+    #return (newmap, fov_Map)
 
 
 #def dropItem(x, y, objects):
@@ -368,9 +373,10 @@ def checkClient(c, local_players, local_objects, local_mobs):
     if c.movedMobs != None:
         movedmobs = c.movedMobs['mobinfo']
         for ID in movedmobs:
-            localmob = local_mobs[ID]
-            localmob.x = movedmobs[ID][0]
-            localmob.y = movedmobs[ID][1] 
+            if movedmobs[ID][0] != None:
+                localmob = local_mobs[ID]
+                localmob.x = movedmobs[ID][0][0]
+                localmob.y = movedmobs[ID][0][1] 
         c.movedMobs = None
     
     for name in c.removed_players:

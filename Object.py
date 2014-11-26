@@ -36,13 +36,14 @@ class Door(UseableObject):
 
 class EntityObject():
 
-    def __init__(self, x, y, char="", color=libtcod.green, solid=False, localMap=None):
+    def __init__(self, x, y, char="", color=libtcod.green, solid=True, localMap=None):
         self.localMap = localMap
         self.x = x
         self.y = y
         self.char = char
         self.color = color
         self.solid = solid
+        self.direction = "North"
 
     def put(self, x, y):
         dx = x - self.x
@@ -87,9 +88,11 @@ class EntityObject():
 
         return False
     
-    def draw(self, console, offsetx=0, offsety=0):
-        #if libtcod.map_is_in_fov(fov_map, self.x, self.y):
-        libtcod.console_set_default_foreground(console, self.color)
+    def draw(self, console, offsetx=0, offsety=0, target=False):
+        if not target:
+            libtcod.console_set_default_foreground(console, self.color)
+        else:
+            libtcod.console_set_default_foreground(console, libtcod.yellow)
         libtcod.console_put_char(console, (self.x - offsetx), (self.y - offsety), self.char, libtcod.BKGND_NONE)
 
     def clear(self, console, offsetx=0, offsety=0):

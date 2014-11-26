@@ -6,6 +6,7 @@ import libtcodpy as libtcod
 from Object import *
 from ObjectAi import *
 from Monster import *
+from thread import *
 
 #types
 # - small dungeon = low number of small rooms
@@ -17,6 +18,8 @@ class Region:
         self.Map = Map(None, mapType)
         print "Generated new region at", location
         self.active = False
+        self.explored = False
+        self.location = location
         
         #For future spawning
         self.MH = MH
@@ -27,15 +30,45 @@ class Region:
         self.players = []
         self.objects = self.mobs + self.players
         
-    def addPlayer(self, player):
+    def addPlayer(self, player, server):
         if len(self.players) == 0:
             self.active = True
-        self.players.append(player)
+            if not self.explored:
+                self.explored = True
+                #Check to generate surrounding...
+                
+                #Check North
+                northlocation = (self.location[0], self.location[1] + 1)
+                north = server.checkRegion(northlocation)
+                if not north:
+                    t = start_new_thread(server.makeRegion, (northlocation,))
+                    
+                #Check East
+                eastlocation = (self.location[0] + 1, self.location[1])
+                east = server.checkRegion(eastlocation)
+                if not east:
+                    t = start_new_thread(server.makeRegion, (eastlocation,))
+                    
+                #Check South
+                southlocation = (self.location[0], self.location[1] - 1)
+                south = server.checkRegion(southlocation)
+                if not south:
+                    t = start_new_thread(server.makeRegion, (southlocation,))
+                    
+                #Check West
+                westlocation = (self.location[0] - 1, self.location[1])
+                west = server.checkRegion(westlocation)
+                if not west:
+                    t = start_new_thread(server.makeRegion, (westlocation,))
+                
+                
+        self.players.append(player.object)
+        self.objects = self.mobs + self.players
         
     def removePlayer(self, player):
-        for p in self.players:
-            if p.address == player:
-                self.players.remove(p)
+        if player.object in self.players:
+            #if p.address == player:
+            self.players.remove(player.object)
         
         #If the region is empty then deativate it
         if len(self.players) == 0:
@@ -50,9 +83,10 @@ class Region:
         mobs = []
         for i in range(30):
             mob = MH.spawnMonster(self.Map)
-            mob.ID = self.entityCount
-            mobs.append(mob)
-            self.entityCount += 1
+            if mob != None:
+                mob.ID = self.entityCount
+                mobs.append(mob)
+                self.entityCount += 1
         return mobs       
         
 
@@ -85,6 +119,8 @@ class Map:
             return 12
         elif self.mapType == "forest":
             return 18
+        elif self.mapType == "desert":
+            return 20
         elif self.mapType == "fullmap":
             return 1
 
@@ -194,7 +230,7 @@ class Map:
     def generate_map(self):
         # if no maptype given, then pick one
         if self.mapType == "":
-            mapTypes = ["smalldungeon", "cave", "forest"]
+            mapTypes = ["smalldungeon", "cave", "forest"] #desert
             self.mapType = choice(mapTypes)
             
             
@@ -204,17 +240,45 @@ class Map:
         elif self.mapType == "cave":
             self.generate_cave()
         elif self.mapType == "forest":
-            self.generate_forest()
+            self.generate_forest() 
+        elif self.mapType == "desert":
+            self.generate_desert() 
             
-        elif self.mapType == "plains":
-            self.mappedArea = self.empty_map()
-            # self.generate_plains()
-            print("need to write more plains generation code")  
+        
         elif self.mapType == "fullmap":
             self.width = 20
             self.height = 20
             self.mappedArea = self.fill_map(libtcod.black)
             self.starting_point = (1, 1)
+
+    def generate_desert(self):
+        if self.gui is not None:
+            self.messenger.message("Generating Forest", libtcod.yellow)
+            self.gui.update()
+        libtcod.console_flush()	
+        self.width = randint(120, 360)
+        self.height = randint(80, 240)
+        
+        self.wall_color = libtcod.Color(117, 98, 36)
+        self.floor_color = libtcod.Color(206, 186, 118)
+
+        self.mappedArea = self.empty_map()
+        
+        self.setupCellularDesert()
+        for i in range(6):
+            if self.gui is not None:
+                self.messenger.message(str(i * 20) + "%")
+                self.gui.update()
+                libtcod.console_flush()	
+            self.automate()
+        self.generateDepth()
+        self.colorMap()
+        self.randomStartPoint()
+        #self.place_trees()
+        if self.gui is not None:
+            self.messenger.message("Map finished generating!", libtcod.yellow)
+            self.gui.update()        
+            libtcod.console_flush()
 
     def generate_small_dungeon(self):
         self.width = randint(70, 110)
@@ -478,6 +542,65 @@ class Map:
                     
         return (posx, posy)  
 
+    def setupCellularDesert(self):
+        self.temp_map = self.fill_map(self.wall_color)
+        ##Fill the map with ground at the specified percentage
+        ##Lower numbers make more open caves, while higher numbers result in more closed in, but more un connected 'rooms'
+        ##40% is a decent percentage
+        rCheck = 70
+        
+        #Left border
+        for x in range(2, 10):
+            for y in range(2,self.height-2):
+                r = randint(1,100)
+                if rCheck < r:
+                    self.mappedArea[x][y].color = self.floor_color
+                    self.mappedArea[x][y].blocked = False
+                    self.mappedArea[x][y].block_sight = False
+                else:
+                    self.mappedArea[x][y].color = self.wall_color
+                    self.mappedArea[x][y].blocked = True
+                    self.mappedArea[x][y].block_sight = True
+                    
+        #Right border
+        for x in range(self.width - 10, self.width):
+            for y in range(2,self.height-2):
+                r = randint(1,100)
+                if rCheck < r:
+                    self.mappedArea[x][y].color = self.floor_color
+                    self.mappedArea[x][y].blocked = False
+                    self.mappedArea[x][y].block_sight = False
+                else:
+                    self.mappedArea[x][y].color = self.wall_color
+                    self.mappedArea[x][y].blocked = True
+                    self.mappedArea[x][y].block_sight = True
+        
+        #Top border
+        for x in range(2,self.width-2):
+            for y in range(2,10):
+                r = randint(1,100)
+                if rCheck < r:
+                    self.mappedArea[x][y].color = self.floor_color
+                    self.mappedArea[x][y].blocked = False
+                    self.mappedArea[x][y].block_sight = False
+                else:
+                    self.mappedArea[x][y].color = self.wall_color
+                    self.mappedArea[x][y].blocked = True
+                    self.mappedArea[x][y].block_sight = True
+                    
+        #Bottom border
+        for x in range(2,self.width-2):
+            for y in range(self.height - 10, self.height - 2):
+                r = randint(1,100)
+                if rCheck < r:
+                    self.mappedArea[x][y].color = self.floor_color
+                    self.mappedArea[x][y].blocked = False
+                    self.mappedArea[x][y].block_sight = False
+                else:
+                    self.mappedArea[x][y].color = self.wall_color
+                    self.mappedArea[x][y].blocked = True
+                    self.mappedArea[x][y].block_sight = True
+                
     def setupCellular(self):
         self.temp_map = self.fill_map(self.wall_color)
         ##Fill the map with ground at the specified percentage
@@ -550,12 +673,17 @@ class Map:
         
         water_color = libtcod.sky
 
+        if self.mapType == "desert":
+            water_level = 0.04
+        else:
+            water_level = 0.07
+
         noise = libtcod.noise_new(2, noise_hurst, noise_lacunarity)
         for y in range(self.height):
                 for x in range(self.width):
                     f = [noise_zoom * x / (self.width), noise_zoom * y / (self.height)]
                     noisefloat = abs(libtcod.noise_get(noise, f, libtcod.NOISE_PERLIN))
-                    if noisefloat >= float(0) and noisefloat <= 0.08:
+                    if noisefloat >= float(0) and noisefloat <= water_level:
                         tile = mapped[x][y]
                         tile.tileType = "water"
                         tile.blocked = False
@@ -567,7 +695,7 @@ class Map:
                         tile.height = 0 - depth
                     else:
                         tile = mapped[x][y]
-                        height = int(noisefloat / 0.02)
+                        height = int(noisefloat / 0.03)
                         if height > 12:
                             height = 12
                         tile.height = height

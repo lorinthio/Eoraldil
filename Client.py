@@ -58,6 +58,12 @@ class Client(ConnectionListener):
 		self.message("[" + (data['who'].split())[0] + "] : " + data['message'], libtcod.light_green)
 		#print(data['who'] + ": " + data['message'])
 
+	def Network_systemMessage(self, data):
+		self.message(data['message'], libtcod.yellow)
+
+	def Network_systemSentMessage(self, data):
+		self.message(data['message'], libtcod.light_purple)
+
 	def message(self, message, color):
 		self.gui.message(message, color)
 	
@@ -66,25 +72,51 @@ class Client(ConnectionListener):
 		self.message(data['who'] + " has disconnected", libtcod.yellow)
 	
 	def Network_map(self, data):
-		self.mapChange = True
+		width = data['width']
+		self.singlechunksize = float(100 * (1.0 / width))
+		self.count = 0
+		self.i = 0		
+	
 		self.mapData = data
 		self.mapDone = False
+		self.message("Loading " + data['mapType'] + " at location... " + str(data['location']), libtcod.yellow)
 		
 	def Network_mapChunk(self, data):
-		self.gotChunk = True
+		self.count += self.singlechunksize
+		if self.count >= 10:
+		    self.count -= 10
+		    self.i += 1
+		    self.message("Loaded " + str(10 * self.i) + "%", libtcod.yellow)
+		#self.gotChunk = True
 		self.chunks.append(data['chunk'])
 		
 	def Network_mapDone(self, data):
+		self.message("Initializing map", libtcod.yellow)
 		self.mapDone = True
+		self.mapChange = True
 
         def Network_mobSpawn(self, data):
                 self.spawnedMobs.append(data)
 
-        def Network_mobsMove(self, data):
+        def Network_mobAction(self, data):
+		keys = data['mobinfo'].keys()
+		for key in keys:
+			if data['mobinfo'][key][1] != None:
+				mobname = data['mobinfo'][key][1][0]
+				attack = data['mobinfo'][key][1][1]
+				target = data['mobinfo'][key][1][2]
+				damage = data['mobinfo'][key][1][3]
+				if target == self.player.name:
+					self.message(mobname + " used " + attack + " on you for " + str(damage) + " damage", libtcod.red)
+					self.player.curClass.hp -= damage
+				else:
+					self.message(mobname + " used " + attack + " on " + target +  " for " + str(damage) + " damage", libtcod.orange)
                 self.movedMobs = data
 		
 	def Network_position(self, data):
-		self.moved_players[data['who']] = data['position']
+		if data['who'] != self.player.name:
+			print data['who'], data['position']
+			self.moved_players[data['who']] = data['position']
 	
 	# built in stuff
 

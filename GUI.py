@@ -8,7 +8,7 @@ class GUIHandler:
 	self.player = player
 	
 	#Message Panels
-	gui_message = MessagePanel(None, 40, 41, 40, 9)
+	gui_message = MessagePanel(None, 45, 46, 44, 14, 11)
 	gui_message.message("Welcome to Eoraldil!", libtcod.yellow)
 	gui_message.message("Your journey begins... ", libtcod.grey)
 	self.messenger = gui_message
@@ -16,19 +16,19 @@ class GUIHandler:
 
 	
 	#Inventory Panel
-	inventory = InventoryPanel(player, 62, 0, 19, 39)
+	inventory = InventoryPanel(player, 67, 0, 19, 39)
 	self.inventory = inventory
 	
-	equipment = EquipmentPanel(player, 62, 0, 19, 39)
+	equipment = EquipmentPanel(player, 67, 0, 19, 39)
 	self.equipment = equipment
 	
 	#Character Panel
-	character = CharacterPanel(player, 62, 0, 19, 39)
+	character = CharacterPanel(player, 67, 0, 19, 39)
 	self.activeSide = character
 	self.character = character
 	
 	#Vital Panels
-	gui_vitals = VitalPanel(player, 0, 41, 30, 9)
+	gui_vitals = VitalPanel(player, 0, 46, 30, 9)
 	self.gui_panels.append(gui_vitals)	
 	
 	#gui_fps = FpsCounter(None, 73, 1, 8, 2)
@@ -36,19 +36,18 @@ class GUIHandler:
 	#self.gui_panels.append(gui_fps)
 	
 	#Mouse Panel
-	gui_mouse = MousePanel(player, 0, 49, 30, 2)
+	gui_mouse = MousePanel(player, 0, 59, 30, 2)
 	self.MousePanel = gui_mouse
 	self.gui_panels.append(gui_mouse)
 	
 	#Entry Bar
-	gui_entry = EntryBar(player, 40, 49, 35, 2)
+	gui_entry = EntryBar(player, 45, 58, 44, 2)
 	self.entry = gui_entry
 	self.gui_panels.append(gui_entry)
 	
     def message(self, message, color=libtcod.white):
 	self.messenger.message(message, color)
 	
-    
     def update(self, objects=None, mouse=None):
 	self.activeSide.update()
 	self.messenger.update()
@@ -123,11 +122,11 @@ class EntryBar(MessagePanel):
 	
     def addLetter(self, char):
 	self.msg += char
-	self.message(self.msg[-30:])
+	self.message(self.msg[-self.length:])
 	
     def removeLetter(self):
 	self.msg = self.msg[:-1]
-	self.message(self.msg[-30:])
+	self.message(self.msg[-self.length:])
 	
     def emptyBar(self):
 	self.msg = ""
@@ -167,7 +166,7 @@ class MousePanel(MessagePanel):
             if obj.x == x and obj.y == y and libtcod.map_is_in_fov(c.fov_map, obj.x, obj.y)]
 	line = "     "
 	for name in names:
-	    line += name + ", "
+	    line += str(name) + ", "
 	line = line[0: len(line)-2].strip()
 	
 	if self.lastline == line:

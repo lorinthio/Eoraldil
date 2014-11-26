@@ -34,10 +34,14 @@ class Player(EntityObject):
 		
 		# Identifiers	
 		self.name = name
+		self.ID = "PLAYER"
 		self.nickName = name
 		self.curClass = None
 		
 		self.typing = False
+		
+		# Placeholders for other things
+		self.target = None
 		
 	def createPlayer(self):
 		self.classes = {"Warrior": Warrior(), "Rogue": Rogue(), "Cleric": Cleric(), "Mage": Mage()}

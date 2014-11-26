@@ -16,27 +16,44 @@ class BasicMonster:
         self.path = None
 
     def takeAction(self, Map, objects):
-        monster = self.owner
-        if self.target == None:
-            (targetfound, target) = self.checkSenses()
-            if not targetfound:
+        # If no target then wander
+        if self.owner.target == None:
+            if self.owner.moveReady:
                 self.wander(Map, objects)
-            else:           
-                self.target = target
-        elif 2 <= self.distance_to(self.target) <= 15:
-            self.move_to_target(Map)
+        else:
+            # If there is a target figure out the distance to determine the next action...
+            distance = self.distance_to(self.owner.target)
+            
+            #If we can move, try to get closer (unless target is too far away)
+            if self.owner.moveReady:
+                self.owner.moveReady = False
+                if 2 <= distance <= 10:
+                    self.move_to_target(Map)
+                if distance > 10: 
+                    self.owner.target = None
+                    
+            #If we can attack, and are close enough, then attack 
+            if self.owner.attackReady:    
+                if distance <= 2:
+                    self.owner.attack()
 
     def wander(self, Map, objects):
         # 40% chance to move, 60% chance to stand still
+        self.owner.moveReady = False
+        
         if randint(1,100) <= 40:
             dx = randint(-1, 1)
             dy = randint(-1, 1)
             
+            self.owner.moved = True
             self.owner.move(dx, dy, Map, objects)
         
-    def checkSenses(self):
-        target = self.owner.checkSenses()
-        if target is not None:
+        
+            
+        
+    def checkSenses(self, objects):
+        target = self.owner.checkSenses(objects)
+        if target != None:
             return (True, target)
         return (False, None)
 
@@ -50,33 +67,19 @@ class BasicMonster:
         #self.owner.move(dx, dy)
         
         #if path doesnt exist make new path to target
-        if self.path == None:
-            fov_map = Map.fov_map
-            path = libtcod.path_new_using_map(fov_map)
-            newx, newy = Map.randomPoint()
-            libtcod.path_compute(path, self.owner.x, self.owner.y, self.target.x, self.target.y)
-            # use the path ... 
-
-            if not libtcod.path_is_empty(path) :
-                x,y=libtcod.path_walk(path,True)
-                if not x is None :
-                    self.owner.put(x,y)
-            else:
-                libtcod.path_delete(self.path)
-                self.path = None
-            self.path = path
-        #if path exists then take the next step
-        else:
-            path = self.path
-            if not libtcod.path_is_empty(path) :
-                x,y=libtcod.path_walk(path,True)
-                if not x is None :
-                    self.owner.put(x,y)
-                else:
-                    print("Empty, time for new path")
-                    libtcod.path_delete(self.path)
-                    self.path = None
-            self.path = path
+        owner = self.owner
+        target = owner.target
+        fov_map = Map.fov_map
+        path = libtcod.path_new_using_map(fov_map)
+        libtcod.path_compute(path, owner.x, owner.y, target.x, target.y)
+        
+        # use the path ... 
+        if not libtcod.path_is_empty(path) :
+            x,y=libtcod.path_walk(path,True)
+            if not x is None :
+                owner.put(x,y)
+                
+        owner.moved = True
 
     def distance_to(self, other):
         dx = other.x - self.owner.x
